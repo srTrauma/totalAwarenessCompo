@@ -4,7 +4,6 @@
   "/_document": "pages/_document.js",
   "/Login": "pages/Login.js",
   "/api/login": "pages/api/login.js",
-  "/api/register": "pages/api/register.js",
   "/CompanySelection": "pages/CompanySelection.js",
   "/api/companies/list": "pages/api/companies/list.js"
 }
