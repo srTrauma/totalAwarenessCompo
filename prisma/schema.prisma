@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  email         String        @unique
+  password      String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  ownedCompanies Company[]    @relation("CompanyOwner")
+  memberships   UserCompany[]
+}
+
+model Company {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  public      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  ownerId     Int
+  owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     UserCompany[]
+  
+  @@unique([name, ownerId])
+}
+
+model UserCompany {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  companyId Int
+  roleId    Int      @default(3) // Por defecto es MEMBER (id=3)
+  joinedAt  DateTime @default(now())
+  approved  Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, companyId])
+}
+
+// Modelo para sustituir el enum Role
+model Role {
+  id             Int           @id @default(autoincrement())
+  name           String        @unique // OWNER, ADMIN, MEMBER, VIEWER
+  description    String?
+  level          Int           @unique // Nivel de permiso (1=mayor, 4=menor)
+  userCompanies  UserCompany[]
+}
