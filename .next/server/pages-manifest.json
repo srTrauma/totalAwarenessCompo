@@ -1,1 +1,7 @@
-{"/_app":"pages/_app.js","/_error":"pages/_error.js","/CompanySelection":"pages/CompanySelection.html","/Dashboard":"pages/Dashboard.html","/Login":"pages/Login.html","/MainLogin":"pages/MainLogin.html","/about":"pages/about.html","/api/companies/create":"pages/api/companies/create.js","/api/companies/delete":"pages/api/companies/delete.js","/api/companies/detail":"pages/api/companies/detail.js","/api/companies/explore":"pages/api/companies/explore.js","/api/companies/list":"pages/api/companies/list.js","/api/companies/join":"pages/api/companies/join.js","/api/companies/members":"pages/api/companies/members.js","/api/companies/pendingRequest":"pages/api/companies/pendingRequest.js","/api/companies/public":"pages/api/companies/public.js","/api/companies/update":"pages/api/companies/update.js","/api/login":"pages/api/login.js","/api/roles/list":"pages/api/roles/list.js","/api/faqs":"pages/api/faqs.js","/companies/details/[id]":"pages/companies/details/[id].html","/api/register":"pages/api/register.js","/companies/edit/[id]":"pages/companies/edit/[id].html","/companies/explore":"pages/companies/explore.html","/contact":"pages/contact.html","/companies/manage/members":"pages/companies/manage/members.html","/faq":"pages/faq.html","/loginError":"pages/loginError.html","/_document":"pages/_document.js","/404":"pages/404.html"}
+{
+  "/_app": "pages/_app.js",
+  "/_document": "pages/_document.js",
+  "/_error": "pages/_error.js",
+  "/api/faqs": "pages/api/faqs.js",
+  "/faq": "pages/faq.js"
+}
