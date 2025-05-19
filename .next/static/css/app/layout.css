@@ -590,10 +590,6 @@ video {
   margin-left: auto;
   margin-right: auto;
 }
-.my-16 {
-  margin-top: 4rem;
-  margin-bottom: 4rem;
-}
 .-mb-px {
   margin-bottom: -1px;
 }
@@ -635,9 +631,6 @@ video {
 }
 .ml-4 {
   margin-left: 1rem;
-}
-.ml-auto {
-  margin-left: auto;
 }
 .mr-1 {
   margin-right: 0.25rem;
@@ -714,6 +707,9 @@ video {
 .h-4 {
   height: 1rem;
 }
+.h-40 {
+  height: 10rem;
+}
 .h-5 {
   height: 1.25rem;
 }
@@ -725,9 +721,6 @@ video {
 }
 .h-\[74px\] {
   height: 74px;
-}
-.h-auto {
-  height: auto;
 }
 .h-screen {
   height: 100vh;
@@ -753,8 +746,8 @@ video {
 .w-4 {
   width: 1rem;
 }
-.w-4\/5 {
-  width: 80%;
+.w-40 {
+  width: 10rem;
 }
 .w-5 {
   width: 1.25rem;
@@ -764,9 +757,6 @@ video {
 }
 .w-64 {
   width: 16rem;
-}
-.w-auto {
-  width: auto;
 }
 .w-full {
   width: 100%;
@@ -792,11 +782,11 @@ video {
 .max-w-\[200px\] {
   max-width: 200px;
 }
-.max-w-full {
-  max-width: 100%;
-}
 .max-w-md {
   max-width: 28rem;
+}
+.max-w-xl {
+  max-width: 36rem;
 }
 .flex-1 {
   flex: 1 1 0%;
@@ -863,6 +853,9 @@ video {
 .gap-10 {
   gap: 2.5rem;
 }
+.gap-12 {
+  gap: 3rem;
+}
 .gap-2 {
   gap: 0.5rem;
 }
@@ -874,9 +867,6 @@ video {
 }
 .gap-8 {
   gap: 2rem;
-}
-.gap-\[7rem\] {
-  gap: 7rem;
 }
 .space-x-1 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
@@ -902,6 +892,11 @@ video {
   --tw-space-x-reverse: 0;
   margin-right: calc(2rem * var(--tw-space-x-reverse));
   margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
+}
+.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
 }
 .space-y-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
@@ -948,6 +943,9 @@ video {
 }
 .rounded {
   border-radius: 0.25rem;
+}
+.rounded-2xl {
+  border-radius: 1rem;
 }
 .rounded-full {
   border-radius: 9999px;
@@ -1141,18 +1139,11 @@ video {
   -o-object-fit: contain;
      object-fit: contain;
 }
-.object-cover {
-  -o-object-fit: cover;
-     object-fit: cover;
-}
 .p-0 {
   padding: 0px;
 }
 .p-1 {
   padding: 0.25rem;
-}
-.p-10 {
-  padding: 2.5rem;
 }
 .p-2 {
   padding: 0.5rem;
@@ -1247,9 +1238,6 @@ video {
 .pb-2 {
   padding-bottom: 0.5rem;
 }
-.pb-3 {
-  padding-bottom: 0.75rem;
-}
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -1265,9 +1253,6 @@ video {
 .pl-3 {
   padding-left: 0.75rem;
 }
-.pl-6 {
-  padding-left: 1.5rem;
-}
 .pr-10 {
   padding-right: 2.5rem;
 }
@@ -1276,9 +1261,6 @@ video {
 }
 .pr-4 {
   padding-right: 1rem;
-}
-.pr-8 {
-  padding-right: 2rem;
 }
 .pt-1 {
   padding-top: 0.25rem;
@@ -1655,10 +1637,6 @@ body {
   background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:bg-gray-100\/50:hover {
-  background-color: rgb(243 244 246 / 0.5);
-}
-
 .hover\:bg-gray-50:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
@@ -1826,6 +1804,11 @@ body {
     margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
   }
 
+  .sm\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
   .sm\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -1839,10 +1822,6 @@ body {
 
 @media (min-width: 768px) {
 
-  .md\:mt-0 {
-    margin-top: 0px;
-  }
-
   .md\:flex {
     display: flex;
   }
@@ -1851,16 +1830,16 @@ body {
     display: none;
   }
 
+  .md\:h-56 {
+    height: 14rem;
+  }
+
   .md\:h-\[80px\] {
     height: 80px;
   }
 
-  .md\:w-1\/2 {
-    width: 50%;
-  }
-
-  .md\:w-5\/12 {
-    width: 41.666667%;
+  .md\:w-56 {
+    width: 14rem;
   }
 
   .md\:w-60 {
@@ -1883,6 +1862,14 @@ body {
     flex-direction: row;
   }
 
+  .md\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+
+  .md\:gap-10 {
+    gap: 2.5rem;
+  }
+
   .md\:space-x-4 > :not([hidden]) ~ :not([hidden]) {
     --tw-space-x-reverse: 0;
     margin-right: calc(1rem * var(--tw-space-x-reverse));
@@ -1895,6 +1882,10 @@ body {
     margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
 
+  .md\:p-10 {
+    padding: 2.5rem;
+  }
+
   .md\:py-4 {
     padding-top: 1rem;
     padding-bottom: 1rem;
@@ -1905,9 +1896,9 @@ body {
     line-height: 2rem;
   }
 
-  .md\:text-3xl {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+  .md\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 }
 

@@ -10,8 +10,8 @@ const AboutPage = () => {
     <>
     <NavBar />
     <Head>
-      <title>About Us - TotalAwareness</title>
-      <meta name="description" content="Learn more about TotalAwareness, our mission, values, and commitment to excellence." />
+      <title>Sobre Nosotros - TotalAwareness</title>
+      <meta name="description" content="Conozca más sobre TotalAwareness, nuestra misión, valores y compromiso con la excelencia." />
       <link rel="icon" href="/favicon.ico" />
     </Head>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 font-sans text-gray-800">
@@ -21,8 +21,8 @@ const AboutPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <h1 className="text-4xl font-bold mb-4">About Us</h1>
-        <p className="text-xl max-w-3xl mx-auto">Dedicated to excellence and innovation in everything we do</p>
+        <h1 className="text-4xl font-bold mb-4">Sobre Nosotros</h1>
+        <p className="text-xl max-w-3xl mx-auto">Dedicados a la excelencia y la innovación en todo lo que hacemos</p>
       </motion.header>
 
       <motion.section 
@@ -33,10 +33,10 @@ const AboutPage = () => {
         transition={{ duration: 0.6 }}
       >
         <div className="relative mb-6">
-          <h2 className="text-3xl font-bold text-[#003366] pb-2">Our Mission</h2>
+          <h2 className="text-3xl font-bold text-[#003366] pb-2">Nuestra Misión</h2>
           <div className="absolute bottom-0 left-0 w-16 h-1 bg-[#003366]"></div>
         </div>
-        <p className="text-lg">Our mission is to provide innovative solutions that empower businesses to achieve their full potential through cutting-edge technology and exceptional service.</p>
+        <p className="text-lg">Nuestra misión es proporcionar soluciones innovadoras que permitan a las empresas alcanzar su máximo potencial a través de tecnología de vanguardia y un servicio excepcional.</p>
       </motion.section>
 
       <motion.section 
@@ -47,11 +47,11 @@ const AboutPage = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <div className="relative mb-6">
-          <h2 className="text-3xl font-bold text-[#003366] pb-2">Our Values</h2>
+          <h2 className="text-3xl font-bold text-[#003366] pb-2">Nuestros Valores</h2>
           <div className="absolute bottom-0 left-0 w-16 h-1 bg-[#003366]"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {["Integrity", "Innovation", "Excellence", "Teamwork", "Customer Focus", "Continuous Growth"].map((value, index) => (
+          {["Integridad", "Innovación", "Excelencia", "Trabajo en Equipo", "Enfoque al Cliente", "Crecimiento Continuo"].map((value, index) => (
             <motion.div
               key={index}
               className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-100"
@@ -59,7 +59,7 @@ const AboutPage = () => {
               transition={{ duration: 0.2 }}
             >
               <h3 className="text-xl font-semibold text-[#003366] mb-2">{value}</h3>
-              <p>We are committed to upholding the highest standards in our work and relationships.</p>
+              <p>Estamos comprometidos a mantener los más altos estándares en nuestro trabajo y relaciones.</p>
             </motion.div>
           ))}
         </div>

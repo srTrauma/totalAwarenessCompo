@@ -166,7 +166,7 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>{isLogin ? "Iniciar sesión" : "Registrarse"} | Total Awareness</title>
+        <title>Inicio de sesion | Total Awareness</title>
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-sky-200 to-blue-300">
         <NavBar />
