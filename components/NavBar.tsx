@@ -51,9 +51,6 @@ function NavBar() {
                 <Link href="/about" className="text-sm font-medium text-neutral-700 hover:text-blue-800 transition-colors">
                   Sobre Nosotros
                 </Link>
-                <Link href="/services" className="text-sm font-medium text-neutral-700 hover:text-blue-800 transition-colors">
-                  Servicios
-                </Link>
                 <Link href="/faq" className="text-sm font-medium text-neutral-700 hover:text-blue-800 transition-colors">
                   FAQ
                 </Link>
@@ -101,12 +98,7 @@ function NavBar() {
                 >
                   Sobre Nosotros
                 </Link>
-                <Link href="/services" 
-                  className="block py-3 text-neutral-800 font-medium hover:text-blue-800 transition-colors border-b border-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Servicios
-                </Link>
+              
                 <Link href="/faq" 
                   className="block py-3 text-neutral-800 font-medium hover:text-blue-800 transition-colors border-b border-gray-100"
                   onClick={() => setIsMenuOpen(false)}
@@ -119,18 +111,7 @@ function NavBar() {
                 >
                   Contacto
                 </Link>
-                <Link href="/privacy" 
-                  className="block py-3 text-neutral-800 font-medium hover:text-blue-800 transition-colors border-b border-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Política de Privacidad
-                </Link>
-                <Link href="/terms" 
-                  className="block py-3 text-neutral-800 font-medium hover:text-blue-800 transition-colors border-b border-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Términos de Servicio
-                </Link>
+                
                 {isLoggedIn && (
                   <Link href="/Dashboard" 
                     className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
