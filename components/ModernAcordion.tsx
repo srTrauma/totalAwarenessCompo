@@ -1,69 +1,56 @@
 import { useState } from "react";
-import Button from "./Button";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Section {
+  title: string;
+  content: string;
+}
 
 interface Props {
   Title: string;
-  sections: { title: string; content: string }[];
+  sections: Section[];
 }
 
-const ModernAccordion: React.FC<Props> = ({ Title, sections }) => {
-  const [activeIndex, setActiveIndex] = useState<number>(0);
+const ModernAccordion = ({ Title, sections }: Props) => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <article className="py-12 max-w-5xl mx-auto">
-      <div className="flex flex-col">
-        <div className="flex flex-row shadow-md bg-white rounded-lg overflow-hidden">
-          <div className="flex flex-col justify-center items-start p-10 w-1/2 space-y-6">
-            <img 
-              src="/imagesToGuapas/coso.png" 
-              alt="Feature illustration" 
-              className="h-16 w-auto mb-4"
-            />
-            <h2 className="text-2xl font-medium text-gray-800">{Title}</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Innovative solutions tailored to your business needs. We provide comprehensive 
-              services designed to enhance your operational efficiency and drive growth.
-            </p>
-            <Button Text="Learn More" blue href="#" />
-          </div>
-          <div className="w-1/2 bg-gray-50 p-8">
-            <h3 className="text-xl font-medium mb-6 text-gray-800 border-b pb-3">Key Features</h3>
-            <div className="space-y-2">
-              {sections.map((section, index) => (
-                <div
-                  key={index}
-                  onClick={() => setActiveIndex(index)}
-                  className="cursor-pointer"
+    <div className="w-full max-w-xl">
+      <h3 className="text-lg font-semibold text-blue-800 mb-4">{Title}</h3>
+      <div className="space-y-2">
+        {sections.map((section, idx) => (
+          <div key={idx} className="border rounded-lg shadow-sm bg-white">
+            <button
+              className="w-full flex justify-between items-center px-4 py-3 text-left focus:outline-none transition-colors hover:bg-blue-50"
+              onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+            >
+              <span className="font-medium text-blue-900">{section.title}</span>
+              <motion.span
+                animate={{ rotate: openIndex === idx ? 90 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="ml-2 text-blue-700"
+              >
+                ▶
+              </motion.span>
+            </button>
+            <AnimatePresence initial={false}>
+              {openIndex === idx && (
+                <motion.div
+                  key="content"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="overflow-hidden px-4 pb-3"
                 >
-                  <div 
-                    className={`flex items-center p-3 rounded transition-colors ${
-                      activeIndex === index ? "bg-gray-100" : "hover:bg-gray-100/50"
-                    }`}
-                  >
-                    <h4 className="font-medium text-gray-700">{section.title}</h4>
-                    <div className="ml-auto">
-                      {activeIndex === index ? 
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
-                        </svg> : 
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                        </svg>
-                      }
-                    </div>
-                  </div>
-                  {activeIndex === index && (
-                    <div className="pl-6 pr-4 py-3 text-gray-600 text-sm">
-                      {section.content}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  <div className="text-gray-700">{section.content}</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        ))}
       </div>
-    </article>
+    </div>
   );
 };
 
