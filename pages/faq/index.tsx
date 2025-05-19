@@ -2,7 +2,7 @@ import FooterMain from '@/components/FooterMain';
 import NavBar from '@/components/NavBar';
 import '@/app/globals.css';
 import { useState, useEffect } from 'react';
-
+import Head from 'next/head';
 interface Faq {
   id: number;
   question: string;
@@ -98,6 +98,11 @@ const FAQPage = () => {
   
   return (
     <>
+    <Head>
+      <title>Preguntas Frecuentes - Total Awareness</title>
+      <meta name="description" content="Preguntas frecuentes sobre Total Awareness." />
+      <link rel="icon" href="/favicon.ico" />
+    </Head>
     <div className="bg-gray-50 text-neutral-800 min-h-screen flex flex-col">
       <NavBar />
       <main className="flex-grow max-w-4xl mx-auto px-4 py-16">

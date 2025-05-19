@@ -3,7 +3,7 @@ import FooterMain from '@/components/FooterMain';
 import NavBar from '@/components/NavBar';
 import '@/app/globals.css';
 import { useState, useEffect } from 'react';
-
+import Head from 'next/head';
 const ContactPage = () => {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
@@ -41,6 +41,11 @@ const ContactPage = () => {
 
   return (
     <>
+    <Head>
+      <title>Contacto - Total Awareness</title>
+      <meta name="description" content="Página de contacto de Total Awareness" />
+      <link rel="icon" href="/favicon.ico" />
+    </Head>
     <NavBar />
     <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-md max-w-md w-full p-8">
