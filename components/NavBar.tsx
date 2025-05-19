@@ -9,6 +9,25 @@ function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
 
+  // --- INICIO: Script de Microsoft Clarity ---
+  useEffect(() => {
+    if (!document.getElementById("clarity-script")) {
+      const script = document.createElement("script");
+      script.id = "clarity-script";
+      script.type = "text/javascript";
+      script.async = true;
+      script.innerHTML = `
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "rlx1vvqkhk");
+      `;
+      document.head.appendChild(script);
+    }
+  }, []);
+  // --- FIN: Script de Microsoft Clarity ---
+
   useEffect(() => {
     const user = localStorage.getItem("user");
     setIsLoggedIn(!!user);
