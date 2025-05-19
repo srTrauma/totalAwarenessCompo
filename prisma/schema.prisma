@@ -55,7 +55,7 @@ model Role {
   userCompanies  UserCompany[]
 }
 
-model FAQ {
+model Faq {
   id        Int      @id @default(autoincrement())
   question  String
   answer    String?

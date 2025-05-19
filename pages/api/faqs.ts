@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      const faqs = await prisma.FAQ.findMany(); // <-- Corregido a fAQ
+      const faqs = await prisma.faq.findMany();
       res.status(200).json(faqs);
     } catch (error) {
       console.error('Error fetching FAQs:', error);
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'POST') {
     try {
       const { question } = req.body;
-      const newFAQ = await prisma.FAQ.create({ // <-- Corregido a fAQ
+      const newFAQ = await prisma.faq.create({
         data: { question },
       });
       res.status(201).json(newFAQ);
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'PATCH') {
     try {
       const { id, answer } = req.body;
-      const updatedFAQ = await prisma.FAQ.update({ // <-- Corregido a fAQ
+      const updatedFAQ = await prisma.faq.update({
         where: { id },
         data: { answer },
       });

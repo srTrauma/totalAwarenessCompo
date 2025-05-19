@@ -8,7 +8,7 @@ async function main() {
   console.log('Todos los roles han sido eliminados.');
 
   // Eliminar todas las FAQs existentes
-  await prisma.fAQ.deleteMany({});
+  await prisma.faq.deleteMany({});
   console.log('Todas las FAQs han sido eliminadas.');
 
   // Crear roles
@@ -34,7 +34,7 @@ async function main() {
   ];
 
   for (const faq of faqs) {
-    await prisma.fAQ.create({
+    await prisma.faq.create({
       data: faq,
     });
     console.log(`FAQ "${faq.question}" creada`);
