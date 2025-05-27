@@ -8,12 +8,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const { username, password } = req.body;
-      
+
       // Validaciones básicas
       if (!username || !password) {
         return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
       }
-      
+
       // Buscar usuario por nombre o email
       const user = await prisma.user.findFirst({
         where: {
@@ -23,16 +23,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ]
         },
       });
-      
+
       if (!user) {
-        // Es mejor no especificar si el usuario no existe o la contraseña es incorrecta
-        // por razones de seguridad
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
-      
+
+      // Verificar si el email está confirmado
+      if (!user.emailConfirmed) {
+        return res.status(403).json({ message: 'Debes confirmar tu correo electrónico antes de iniciar sesión.' });
+      }
+
       // Verificar si la contraseña es la temporal
       let isPasswordValid;
-      
+
       if (user.password === 'passwordTemporal') {
         // Para los usuarios migrados con contraseña temporal
         isPasswordValid = password === 'passwordTemporal';
@@ -40,16 +43,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Verificar con bcrypt para usuarios normales
         isPasswordValid = await bcrypt.compare(password, user.password);
       }
-      
+
       if (!isPasswordValid) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
-      
+
       // No enviar la contraseña al cliente
       const { password: _, ...userWithoutPassword } = user;
-      
-      res.status(200).json({ 
-        message: 'Inicio de sesión exitoso', 
+
+      res.status(200).json({
+        message: 'Inicio de sesión exitoso',
         user: userWithoutPassword
       });
     } catch (error) {

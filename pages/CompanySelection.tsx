@@ -145,7 +145,7 @@ export default function CompanySelection() {
               onClick={() => router.push("/companies/explore")}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              <FaSearch className="mr-2" /> Explorar empresas públicas
+              <FaSearch className="mr-2" /> Explorar empresas
             </button>
           </div>
           

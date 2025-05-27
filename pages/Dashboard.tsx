@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
+import Notifications from "@/components/Notification";
 import { FaBuilding, FaUsers, FaCog, FaSignOutAlt, FaUser } from "react-icons/fa";
 import "@/app/globals.css";
 
@@ -170,7 +171,10 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-4">
+                {/* Notificaciones */}
+                {user && <Notifications userId={user.id} />}
+                
                 <button
                   onClick={handleSwitchCompany}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 flex items-center"
