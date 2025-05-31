@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import Notifications from "@/components/Notification";
-import { FaBuilding, FaUsers, FaCog, FaSignOutAlt, FaUser } from "react-icons/fa";
+import { FaBuilding, FaUsers, FaCog, FaSignOutAlt, FaUser, FaProjectDiagram, FaTasks, FaNewspaper, FaUsersCog } from "react-icons/fa";
 import "@/app/globals.css";
 
 interface CompanyDetails {
@@ -263,21 +263,70 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          
-          <div className="bg-white shadow rounded-lg p-8">
-            <h2 className="text-xl font-medium mb-6">Panel de Control</h2>
-            <p className="text-gray-600">
-              ¡Bienvenido al panel de control! Aquí encontrarás todas las herramientas y recursos necesarios para gestionar tu empresa.
+            <div className="bg-white shadow rounded-lg p-8">
+            <h2 className="text-xl font-medium mb-6">Funcionalidades Disponibles</h2>
+            <p className="text-gray-600 mb-6">
+              Explora todas las herramientas disponibles para gestionar tu empresa de manera eficiente.
             </p>
-            <div className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="p-6 border rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
-                  <h3 className="font-medium mb-2">Próximamente</h3>
-                  <p className="text-sm text-gray-600">
-                    Estamos trabajando en nuevas funcionalidades para mejorar tu experiencia.
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Salas de Trabajo */}
+              <div 
+                onClick={() => router.push("/workspaces")}
+                className="p-6 border-2 border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-lg mb-4 group-hover:bg-blue-600">
+                  <FaProjectDiagram className="text-white text-xl" />
+                </div>
+                <h3 className="font-medium mb-2 text-blue-900">Salas de Trabajo</h3>
+                <p className="text-sm text-blue-700">
+                  Crea espacios colaborativos para tu equipo y organiza proyectos.
+                </p>
+              </div>
+
+              {/* Gestión de Tareas */}
+              <div 
+                onClick={() => router.push("/tasks")}
+                className="p-6 border-2 border-green-200 rounded-lg bg-green-50 hover:bg-green-100 cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-lg mb-4 group-hover:bg-green-600">
+                  <FaTasks className="text-white text-xl" />
+                </div>
+                <h3 className="font-medium mb-2 text-green-900">Gestión de Tareas</h3>
+                <p className="text-sm text-green-700">
+                  Organiza, asigna y da seguimiento a todas tus tareas y proyectos.
+                </p>
+              </div>
+
+              {/* Posts de Empresa */}
+              <div 
+                onClick={() => router.push("/posts")}
+                className="p-6 border-2 border-purple-200 rounded-lg bg-purple-50 hover:bg-purple-100 cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center justify-center w-12 h-12 bg-purple-500 rounded-lg mb-4 group-hover:bg-purple-600">
+                  <FaNewspaper className="text-white text-xl" />
+                </div>
+                <h3 className="font-medium mb-2 text-purple-900">Posts de Empresa</h3>
+                <p className="text-sm text-purple-700">
+                  Publica noticias, ofertas de trabajo y eventos de tu empresa.
+                </p>
+              </div>
+
+              {/* Gestión de Miembros */}
+              {(company.isOwner || (company.currentUserRole && company.currentUserRole.level <= 2)) && (
+                <div 
+                  onClick={() => router.push("/companies/manage/members")}
+                  className="p-6 border-2 border-orange-200 rounded-lg bg-orange-50 hover:bg-orange-100 cursor-pointer transition-colors group"
+                >
+                  <div className="flex items-center justify-center w-12 h-12 bg-orange-500 rounded-lg mb-4 group-hover:bg-orange-600">
+                    <FaUsersCog className="text-white text-xl" />
+                  </div>
+                  <h3 className="font-medium mb-2 text-orange-900">Gestión de Miembros</h3>
+                  <p className="text-sm text-orange-700">
+                    Administra roles y permisos de los miembros de tu empresa.
                   </p>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </main>

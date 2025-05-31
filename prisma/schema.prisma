@@ -12,6 +12,8 @@ model User {
   name          String        @unique
   email         String        @unique
   password      String
+  profileImage  String?       // Para la foto de perfil
+  faqProfile    String        @default("user") // guest, user, admin - Para perfiles de FAQ
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   ownedCompanies Company[]    @relation("CompanyOwner")
@@ -19,6 +21,11 @@ model User {
   notifications Notification[]
   emailConfirmed      Boolean   @default(false) // <-- Añadido para confirmación de email
   emailConfirmationToken String?                // <-- Añadido para confirmación de email
+  // Nuevas relaciones para tareas y salas
+  assignedTasks Task[]        @relation("TaskAssignee")
+  createdTasks  Task[]        @relation("TaskCreator")
+  workspaceMembers WorkspaceMember[]
+  posts         Post[]
 }
 
 model Company {
@@ -31,6 +38,8 @@ model Company {
   ownerId     Int
   owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members     UserCompany[]
+  workspaces  Workspace[]   // Relación con salas de trabajo
+  posts       Post[]        // Relación con posts
   
   @@unique([name, ownerId])
 }
@@ -59,11 +68,17 @@ model Role {
 }
 
 model Faq {
-  id        Int      @id @default(autoincrement())
-  question  String
-  answer    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    Int       @id @default(autoincrement())
+  question              String
+  answer                String?
+  profile               String?
+  createdByUserId       Int?
+  createdByUserName     String?
+  respondedByUserId     Int?
+  respondedByUserName   String?
+  respondedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model Notification {
@@ -74,4 +89,70 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// Modelo para Salas de Trabajo
+model Workspace {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  companyId   Int?     // Opcional, puede ser personal o de empresa
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     WorkspaceMember[]
+  tasks       Task[]
+}
+
+// Miembros de las Salas de Trabajo
+model WorkspaceMember {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  workspaceId Int
+  role        String    @default("member") // owner, admin, member
+  joinedAt    DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+// Modelo para Tareas
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  priority    String    @default("medium") // low, medium, high, urgent
+  status      String    @default("pending") // pending, in_progress, completed, cancelled
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relaciones
+  assigneeId  Int?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId   Int
+  creator     User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  workspaceId Int?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+// Modelo para Posts de Empresas
+model Post {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  imageUrl    String?
+  linkUrl     String?
+  type        String   @default("general") // general, job_offer, news, event
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id])
+  companyId   Int
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

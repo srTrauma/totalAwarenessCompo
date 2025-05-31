@@ -1,259 +1,233 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PrismaClient } from "@prisma/client";
 
-// Crear una instancia global de Prisma para evitar múltiples conexiones
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "GET") {
-    try {
+  try {
+    if (req.method === "GET") {
       const faqs = await prisma.faq.findMany({
         orderBy: {
-          id: 'asc'
+          createdAt: 'desc'
         }
       });
-
       res.status(200).json(faqs);
-    } catch (error) {
-      console.error("Error fetching FAQs:", error);
-      res.status(500).json({ 
-        message: "Error interno del servidor",
-        error: process.env.NODE_ENV === 'development' ? error : 'Error interno'
-      });
-    }
-  } else if (req.method === "POST") {
-    try {
+    } else if (req.method === "POST") {
       console.log("POST request body:", req.body);
-      console.log("Content-Type:", req.headers['content-type']);
       
-      const { question, answer } = req.body;
+      const { question, answer, profile, userId, userName } = req.body;
 
+      // Validación de pregunta (requerida)
       if (!question) {
-        console.log("Missing question field");
-        return res.status(400).json({ 
-          message: "El campo 'question' es requerido",
-          received: { question, answer }
+        console.log("Validation error: question is missing");
+        return res.status(400).json({
+          message: "La pregunta es requerida",
+          field: "question",
+          received: question
         });
       }
 
       if (typeof question !== 'string' || question.trim().length === 0) {
-        return res.status(400).json({ 
-          message: "La pregunta debe ser un texto válido",
-          received: { question: typeof question, answer: typeof answer }
+        console.log("Validation error: question is empty or not string");
+        return res.status(400).json({
+          message: "La pregunta es requerida y debe ser un texto válido",
+          field: "question",
+          received: question
         });
       }
 
-      const answerValue = answer && typeof answer === 'string' ? answer.trim() : null;
+      // Validación de respuesta (opcional, puede estar vacía)
+      const answerValue = answer && typeof answer === 'string' ? answer.trim() : '';
+      
+      // Profile es opcional
+      const profileValue = profile && typeof profile === 'string' && profile.trim().length > 0 ? profile.trim() : undefined;
 
-      console.log("Creating FAQ with:", { question: question.trim(), answer: answerValue });
+      // Información del usuario que crea la pregunta
+      const createdByUserId = userId ? parseInt(userId) : null;
+      const createdByUserName = userName && typeof userName === 'string' ? userName.trim() : null;
+
+      console.log("Creating FAQ with data:", {
+        question: question.trim(),
+        answer: answerValue,
+        profile: profileValue,
+        createdByUserId,
+        createdByUserName
+      });
 
       const newFaq = await prisma.faq.create({
         data: {
           question: question.trim(),
-          answer: answerValue
+          answer: answerValue,
+          profile: profileValue,
+          createdByUserId,
+          createdByUserName,
+          // Si ya tiene respuesta, también guardar quién la respondió
+          respondedByUserId: answerValue ? createdByUserId : null,
+          respondedByUserName: answerValue ? createdByUserName : null,
+          respondedAt: answerValue ? new Date() : null
         }
       });
 
       console.log("FAQ created successfully:", newFaq);
       res.status(201).json(newFaq);
-    } catch (error) {
-      console.error("Error creating FAQ:", error);
+    } else if (req.method === "PATCH") {
+      console.log("PATCH request body:", req.body);
       
-      if (error instanceof Error && error.message.includes('Unknown arg')) {
-        return res.status(500).json({ 
-          message: "Error de base de datos: Modelo FAQ no configurado correctamente",
-          error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
-        });
-      }
-      
-      res.status(500).json({ 
-        message: "Error interno del servidor",
-        error: process.env.NODE_ENV === 'development' ? error : 'Error interno'
-      });
-    }
-  } else if (req.method === "PUT") {
-    // PUT requiere todos los campos
-    try {
-      console.log(`PUT request body:`, req.body);
-      
-      const { id, question, answer } = req.body;
+      const { id, question, answer, profile, userId, userName } = req.body;
 
       if (!id) {
-        return res.status(400).json({ 
-          message: "El campo 'id' es requerido",
-          received: { id, question, answer }
+        return res.status(400).json({
+          message: "El ID es requerido",
+          field: "id",
+          received: id
         });
       }
 
-      if (!question) {
-        return res.status(400).json({ 
-          message: "El campo 'question' es requerido para PUT",
-          received: { id, question, answer }
-        });
-      }
-
-      const numericId = parseInt(id);
-      if (isNaN(numericId)) {
-        return res.status(400).json({ 
-          message: "El ID debe ser un número válido",
-          received: { id, parsedId: numericId }
-        });
-      }
-
-      if (typeof question !== 'string' || question.trim().length === 0) {
-        return res.status(400).json({ 
-          message: "La pregunta debe ser un texto válido"
-        });
-      }
-
-      const answerValue = answer && typeof answer === 'string' ? answer.trim() : null;
-
-      const updatedFaq = await prisma.faq.update({
-        where: { id: numericId },
-        data: {
-          question: question.trim(),
-          answer: answerValue
-        }
-      });
-
-      console.log("FAQ updated successfully:", updatedFaq);
-      res.status(200).json(updatedFaq);
-    } catch (error) {
-      console.error("Error updating FAQ:", error);
-      
-      if (error instanceof Error && error.message.includes('Record to update not found')) {
-        return res.status(404).json({ 
-          message: "FAQ no encontrado"
-        });
-      }
-      
-      res.status(500).json({ 
-        message: "Error interno del servidor",
-        error: process.env.NODE_ENV === 'development' ? error : 'Error interno'
-      });
-    }
-  } else if (req.method === "PATCH") {
-    // PATCH permite actualización parcial
-    try {
-      console.log(`PATCH request body:`, req.body);
-      
-      const { id, question, answer } = req.body;
-
-      if (!id) {
-        return res.status(400).json({ 
-          message: "El campo 'id' es requerido",
-          received: { id, question, answer }
-        });
-      }
-
-      const numericId = parseInt(id);
-      if (isNaN(numericId)) {
-        return res.status(400).json({ 
-          message: "El ID debe ser un número válido",
-          received: { id, parsedId: numericId }
-        });
-      }
-
-      // Para PATCH, construir el objeto de datos dinámicamente
+      // Construir objeto de actualización solo con campos proporcionados
       const updateData: any = {};
 
+      // Solo validar y actualizar question si se proporciona
       if (question !== undefined) {
         if (typeof question !== 'string' || question.trim().length === 0) {
-          return res.status(400).json({ 
-            message: "La pregunta debe ser un texto válido"
+          return res.status(400).json({
+            message: "La pregunta debe ser un texto válido",
+            field: "question",
+            received: question
           });
         }
         updateData.question = question.trim();
       }
 
+      // Solo actualizar answer si se proporciona
       if (answer !== undefined) {
-        updateData.answer = answer && typeof answer === 'string' ? answer.trim() : null;
+        updateData.answer = typeof answer === 'string' ? answer.trim() : '';
+        
+        // Si se está actualizando la respuesta, guardar información del usuario que responde
+        if (updateData.answer && updateData.answer.length > 0) {
+          if (userId) {
+            updateData.respondedByUserId = parseInt(userId);
+          }
+          if (userName && typeof userName === 'string') {
+            updateData.respondedByUserName = userName.trim();
+          }
+          updateData.respondedAt = new Date();
+        } else {
+          // Si se está borrando la respuesta, limpiar la información del respondedor
+          updateData.respondedByUserId = null;
+          updateData.respondedByUserName = null;
+          updateData.respondedAt = null;
+        }
       }
 
-      // Verificar que al menos un campo se está actualizando
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ 
-          message: "Se debe proporcionar al menos un campo para actualizar (question o answer)",
-          received: { id, question, answer }
-        });
+      // Solo actualizar profile si se proporciona
+      if (profile !== undefined) {
+        updateData.profile = profile && typeof profile === 'string' && profile.trim().length > 0 ? profile.trim() : null;
       }
 
-      console.log("Updating FAQ with:", { id: numericId, ...updateData });
+      console.log("Updating FAQ with data:", updateData);
 
       const updatedFaq = await prisma.faq.update({
-        where: { id: numericId },
+        where: { id: parseInt(id) },
         data: updateData
       });
 
-      console.log("FAQ updated successfully:", updatedFaq);
-      res.status(200).json(updatedFaq);
-    } catch (error) {
-      console.error("Error updating FAQ:", error);
-      
-      if (error instanceof Error && error.message.includes('Record to update not found')) {
-        return res.status(404).json({ 
-          message: "FAQ no encontrado"
-        });
-      }
-      
-      res.status(500).json({ 
-        message: "Error interno del servidor",
-        error: process.env.NODE_ENV === 'development' ? error : 'Error interno'
-      });
-    }
-  } else if (req.method === "DELETE") {
-    try {
+      res.status(200).json(updatedFaq);    } else if (req.method === "DELETE") {
       console.log("DELETE request body:", req.body);
       
-      const { id } = req.body;
+      const { id, userId, action } = req.body;
 
       if (!id) {
-        return res.status(400).json({ 
-          message: "El campo 'id' es requerido",
-          received: { id }
+        return res.status(400).json({
+          message: "El ID es requerido",
+          field: "id",
+          received: id
         });
       }
 
-      const numericId = parseInt(id);
-      if (isNaN(numericId)) {
-        return res.status(400).json({ 
-          message: "El ID debe ser un número válido",
-          received: { id, parsedId: numericId }
+      if (!userId) {
+        return res.status(400).json({
+          message: "El ID del usuario es requerido",
+          field: "userId",
+          received: userId
         });
       }
 
-      await prisma.faq.delete({
-        where: { id: numericId }
+      // Obtener la FAQ para verificar permisos
+      const existingFaq = await prisma.faq.findUnique({
+        where: { id: parseInt(id) }
       });
 
-      console.log("FAQ deleted successfully");
-      res.status(200).json({ message: "FAQ eliminado correctamente" });
-    } catch (error) {
-      console.error("Error deleting FAQ:", error);
-      
-      if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
-        return res.status(404).json({ 
+      if (!existingFaq) {
+        return res.status(404).json({
           message: "FAQ no encontrado"
         });
       }
-      
-      res.status(500).json({ 
-        message: "Error interno del servidor",
-        error: process.env.NODE_ENV === 'development' ? error : 'Error interno'
+
+      const userIdInt = parseInt(userId);
+
+      if (action === "delete-answer") {
+        // Solo el usuario que respondió puede eliminar la respuesta
+        if (existingFaq.respondedByUserId !== userIdInt) {
+          return res.status(403).json({
+            message: "No tienes permisos para eliminar esta respuesta"
+          });
+        }
+
+        // Eliminar solo la respuesta, mantener la pregunta
+        const updatedFaq = await prisma.faq.update({
+          where: { id: parseInt(id) },
+          data: {
+            answer: null,
+            respondedByUserId: null,
+            respondedByUserName: null,
+            respondedAt: null
+          }
+        });
+
+        res.status(200).json({
+          message: "Respuesta eliminada correctamente",
+          faq: updatedFaq
+        });
+      } else {
+        // Eliminar toda la FAQ - solo el usuario que creó la pregunta puede hacerlo
+        if (existingFaq.createdByUserId !== userIdInt) {
+          return res.status(403).json({
+            message: "No tienes permisos para eliminar esta pregunta"
+          });
+        }
+
+        await prisma.faq.delete({
+          where: { id: parseInt(id) }
+        });
+
+        res.status(200).json({ message: "FAQ eliminado correctamente" });
+      }
+    } else {
+      res.status(405).json({ message: "Método no permitido" });
+    }
+  } catch (error) {
+    console.error("Error in FAQ API:", error);
+    
+    // Manejo específico de errores de Prisma
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return res.status(400).json({
+        message: "Ya existe una FAQ con estos datos",
+        error: "Duplicate entry"
       });
     }
-  } else {
-    console.log("Method not allowed:", req.method);
-    return res.status(405).json({ 
-      message: "Método no permitido",
-      allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-      receivedMethod: req.method
+    
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      return res.status(404).json({
+        message: "FAQ no encontrado",
+        error: "Record not found"
+      });
+    }
+
+    res.status(500).json({
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Error desconocido') : 'Error interno'
     });
+  } finally {
+    await prisma.$disconnect();
   }
 }

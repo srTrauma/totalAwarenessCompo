@@ -132,11 +132,21 @@ function NavBar() {
                 </Link>
                 <Link href="/contact" className="text-sm font-medium text-neutral-700 hover:text-blue-800 transition-colors">
                   Contacto
-                </Link>
-                {isLoggedIn && (
-                  <Link href="/CompanySelection" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
-                    Gestión de Empresas
-                  </Link>
+                </Link>                {isLoggedIn && (
+                  <>
+                    <Link href="/CompanySelection" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
+                      Gestión de Empresas
+                    </Link>
+                    <Link href="/workspaces" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
+                      Salas de Trabajo
+                    </Link>
+                    <Link href="/tasks" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
+                      Tareas
+                    </Link>
+                    <Link href="/posts" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
+                      Posts
+                    </Link>
+                  </>
                 )}
               </div>
               
@@ -229,14 +239,31 @@ function NavBar() {
                 >
                   Contacto
                 </Link>
-                
-                {isLoggedIn && (
+                  {isLoggedIn && (
                   <>
                     <Link href="/CompanySelection" 
                       className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Gestión de Empresas
+                    </Link>
+                    <Link href="/workspaces" 
+                      className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Salas de Trabajo
+                    </Link>
+                    <Link href="/tasks" 
+                      className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Tareas
+                    </Link>
+                    <Link href="/posts" 
+                      className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Posts
                     </Link>
                     <Link href="/Profile" 
                       className="block py-3 text-gray-700 font-medium hover:text-gray-900 transition-colors border-b border-gray-100"

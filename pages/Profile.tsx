@@ -2,13 +2,16 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
-import { FaUser, FaEnvelope, FaLock, FaCamera, FaSave, FaArrowLeft } from "react-icons/fa";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
+import { FaUser, FaEnvelope, FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
 import "@/app/globals.css";
 
 interface User {
   id: number;
   name: string;
   email: string;
+  profileImage?: string;
+  faqProfile?: string;
   createdAt: string;
 }
 
@@ -19,29 +22,24 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
-  // Estados para el formulario
+    // Estados para el formulario
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
-  // Estados para la foto de perfil
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [faqProfile, setFaqProfile] = useState("");
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
       router.push("/Login");
       return;
-    }
-
-    const parsedUser = JSON.parse(storedUser);
+    }    const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
     setName(parsedUser.name);
     setEmail(parsedUser.email);
+    setFaqProfile(parsedUser.faqProfile || "");
     fetchUserProfile(parsedUser.id);
   }, [router]);
 
@@ -51,13 +49,12 @@ export default function Profile() {
         headers: {
           userid: userId.toString()
         }
-      });
-
-      if (response.ok) {
+      });      if (response.ok) {
         const data = await response.json();
         setUser(data);
         setName(data.name);
         setEmail(data.email);
+        setFaqProfile(data.faqProfile || "");
       } else {
         setError("Error al cargar el perfil");
       }
@@ -96,10 +93,10 @@ export default function Profile() {
         headers: {
           "Content-Type": "application/json",
           userid: user!.id.toString()
-        },
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           name: name.trim(),
-          email: email.trim()
+          email: email.trim(),
+          faqProfile: faqProfile.trim()
         }),
       });
 
@@ -170,20 +167,11 @@ export default function Profile() {
       setError("Error al conectar con el servidor");
     } finally {
       setSaving(false);
-    }
-  }
+    }  }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
+  const handleProfileImageChange = (imageUrl: string | null) => {
+    setUser(prev => prev ? { ...prev, profileImage: imageUrl || undefined } : null);
+  };
 
   if (loading) {
     return (
@@ -237,39 +225,17 @@ export default function Profile() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Información básica */}
-                <div>
-                  <h2 className="text-lg font-medium mb-4">Información básica</h2>
+                <div>                  <h2 className="text-lg font-medium mb-4">Información básica</h2>
                   
                   {/* Foto de perfil */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Foto de perfil
                     </label>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-                        {previewImage ? (
-                          <img src={previewImage} alt="Preview" className="w-20 h-20 rounded-full object-cover" />
-                        ) : (
-                          <FaUser className="text-blue-600 text-2xl" />
-                        )}
-                      </div>
-                      <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                          id="profile-image"
-                        />
-                        <label
-                          htmlFor="profile-image"
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-                        >
-                          <FaCamera className="mr-2" />
-                          Cambiar foto
-                        </label>
-                      </div>
-                    </div>
+                    <ProfileImageUpload
+                      currentImage={user?.profileImage}
+                      onImageChange={handleProfileImageChange}
+                    />
                   </div>
 
                   <div className="space-y-4">
@@ -287,9 +253,7 @@ export default function Profile() {
                           placeholder="Tu nombre"
                         />
                       </div>
-                    </div>
-
-                    <div>
+                    </div>                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Email
                       </label>
@@ -303,6 +267,22 @@ export default function Profile() {
                           placeholder="tu@email.com"
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Perfil de respuesta para FAQs
+                      </label>
+                      <textarea
+                        value={faqProfile}
+                        onChange={(e) => setFaqProfile(e.target.value)}
+                        rows={3}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Describe cómo te gustaría que el sistema responda en tu nombre (ej: formal, amigable, técnico, etc.)"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Este perfil se usará para personalizar las respuestas automáticas del FAQ
+                      </p>
                     </div>
 
                     <button

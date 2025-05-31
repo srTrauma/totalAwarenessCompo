@@ -12,13 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
-    try {
-      const user = await prisma.user.findUnique({
+    try {      const user = await prisma.user.findUnique({
         where: { id: Number(userId) },
         select: {
           id: true,
           name: true,
           email: true,
+          profileImage: true,
+          faqProfile: true,
           createdAt: true,
           emailConfirmed: true
         }
@@ -33,9 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Error al obtener perfil:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
     }
-  } else if (req.method === 'PUT') {
-    try {
-      const { name, email } = req.body;
+  } else if (req.method === 'PUT') {    try {
+      const { name, email, faqProfile } = req.body;
 
       if (!name || !email) {
         return res.status(400).json({ message: 'Nombre y email son obligatorios' });
@@ -51,15 +51,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (existingUser) {
         return res.status(409).json({ message: 'Este email ya está en uso' });
-      }
-
-      const updatedUser = await prisma.user.update({
+      }      const updatedUser = await prisma.user.update({
         where: { id: Number(userId) },
-        data: { name, email },
+        data: { 
+          name, 
+          email, 
+          faqProfile: faqProfile || null 
+        },
         select: {
           id: true,
           name: true,
           email: true,
+          profileImage: true,
+          faqProfile: true,
           createdAt: true,
           emailConfirmed: true
         }
