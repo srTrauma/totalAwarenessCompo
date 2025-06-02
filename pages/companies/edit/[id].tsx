@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import { FaArrowLeft, FaBuilding, FaSave, FaTrash } from "react-icons/fa";
-import "@/app/globals.css";
 
 interface CompanyDetails {
   id: number;

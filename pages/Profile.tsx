@@ -4,7 +4,7 @@ import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import { FaUser, FaEnvelope, FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
-import "@/app/globals.css";
+
 
 interface User {
   id: number;
@@ -227,12 +227,12 @@ export default function Profile() {
                 {/* Información básica */}
                 <div>                  <h2 className="text-lg font-medium mb-4">Información básica</h2>
                   
-                  {/* Foto de perfil */}
-                  <div className="mb-6">
+                  {/* Foto de perfil */}                  <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Foto de perfil
                     </label>
                     <ProfileImageUpload
+                      userId={user?.id || 0}
                       currentImage={user?.profileImage}
                       onImageChange={handleProfileImageChange}
                     />

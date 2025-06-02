@@ -2,7 +2,7 @@ import Button from "@/components/Button";
 import { useRouter } from "next/router";
 import NavBar from "@/components/NavBar";
 import { useEffect, useState } from "react";
-import "@/app/globals.css";
+
 
 export default function MainLogin() {
   const router = useRouter();

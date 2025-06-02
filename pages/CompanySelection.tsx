@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
+import PublicPostsFeed from "@/components/PublicPostsFeed";
 import { FaBuilding, FaPlus, FaSearch, FaLock, FaGlobe, FaUserShield } from "react-icons/fa";
-import "@/app/globals.css";
+
 
 interface Company {
   id: number;
@@ -298,9 +299,15 @@ export default function CompanySelection() {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
+              </div>            </div>
           )}
+          
+          {/* Sección de Posts Públicos */}
+          <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+            <div className="p-6">
+              <PublicPostsFeed userId={user?.id} />
+            </div>
+          </div>
           
           {/* Botón de cerrar sesión */}
           <div className="text-center">

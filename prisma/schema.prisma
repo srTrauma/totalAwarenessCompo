@@ -20,12 +20,13 @@ model User {
   memberships   UserCompany[]
   notifications Notification[]
   emailConfirmed      Boolean   @default(false) // <-- Añadido para confirmación de email
-  emailConfirmationToken String?                // <-- Añadido para confirmación de email
-  // Nuevas relaciones para tareas y salas
+  emailConfirmationToken String?                // <-- Añadido para confirmación de email  // Nuevas relaciones para tareas y salas
   assignedTasks Task[]        @relation("TaskAssignee")
   createdTasks  Task[]        @relation("TaskCreator")
   workspaceMembers WorkspaceMember[]
+  groupMembers  GroupMember[] // Miembro de grupos
   posts         Post[]
+  invitations   Invitation[]
 }
 
 model Company {
@@ -36,10 +37,11 @@ model Company {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   ownerId     Int
-  owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id])
   members     UserCompany[]
   workspaces  Workspace[]   // Relación con salas de trabajo
   posts       Post[]        // Relación con posts
+  invitations Invitation[]
   
   @@unique([name, ownerId])
 }
@@ -91,18 +93,17 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-// Modelo para Salas de Trabajo
+// Modelo para Salas de Trabajo (ahora obligatoriamente de empresa)
 model Workspace {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  companyId   Int?     // Opcional, puede ser personal o de empresa
-  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   Int      // Obligatorio, siempre pertenece a una empresa
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
   members     WorkspaceMember[]
-  tasks       Task[]
+  groups      WorkspaceGroup[] // Grupos dentro del workspace
+  invitations Invitation[]
 }
 
 // Miembros de las Salas de Trabajo
@@ -116,6 +117,32 @@ model WorkspaceMember {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
+}
+
+// Grupos dentro de los Workspaces
+model WorkspaceGroup {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  members     GroupMember[]
+  tasks       Task[]    // Las tareas ahora pertenecen a grupos
+}
+
+// Miembros de los Grupos
+model GroupMember {
+  id      Int            @id @default(autoincrement())
+  userId  Int
+  groupId Int
+  role    String         @default("member") // leader, member
+  joinedAt DateTime      @default(now())
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group   WorkspaceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
 }
 
 // Modelo para Tareas
@@ -134,8 +161,25 @@ model Task {
   assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
   creatorId   Int
   creator     User      @relation("TaskCreator", fields: [creatorId], references: [id])
-  workspaceId Int?
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  groupId     Int?      // Ahora pertenece a un grupo
+  group       WorkspaceGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  // Archivos adjuntos
+  attachments TaskAttachment[]
+}
+
+// Archivos adjuntos de tareas
+model TaskAttachment {
+  id          Int      @id @default(autoincrement())
+  taskId      Int
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileName    String
+  filePath    String
+  fileSize    Int?
+  mimeType    String?
+  uploadedBy  Int
+  uploadedAt  DateTime @default(now())
+  type        String   @default("general") // general, completion_proof
 }
 
 // Modelo para Posts de Empresas
@@ -155,4 +199,21 @@ model Post {
   author      User     @relation(fields: [authorId], references: [id])
   companyId   Int
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// Modelo para invitaciones
+model Invitation {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  companyId   Int
+  workspaceId Int?
+  status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  role        String   @default("MEMBER")  // ADMIN, MEMBER
+  expires     DateTime
+  createdAt   DateTime @default(now())
+  
+  // Relaciones
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

@@ -1,5 +1,4 @@
 import Button from "@/components/Button";
-import "@/app/globals.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import NavBar from "@/components/NavBar";

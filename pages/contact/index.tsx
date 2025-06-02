@@ -1,7 +1,7 @@
 
 import FooterMain from '@/components/FooterMain';
 import NavBar from '@/components/NavBar';
-import '@/app/globals.css';
+
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 const ContactPage = () => {

@@ -7,25 +7,12 @@ self.__BUILD_MANIFEST = {
   ],
   "ampDevFiles": [],
   "lowPriorityFiles": [],
-  "rootMainFiles": [
-    "static/chunks/webpack.js",
-    "static/chunks/main-app.js"
-  ],
+  "rootMainFiles": [],
   "pages": {
     "/CompanySelection": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/CompanySelection.js"
-    ],
-    "/Dashboard": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/Dashboard.js"
-    ],
-    "/Profile": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/Profile.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",
@@ -36,11 +23,6 @@ self.__BUILD_MANIFEST = {
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
-    ],
-    "/companies/manage/members": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/companies/manage/members.js"
     ],
     "/posts": [
       "static/chunks/webpack.js",

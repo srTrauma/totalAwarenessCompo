@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { 
   UsersIcon, 
   PlusIcon, 
   Cog6ToothIcon,
   TrashIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 interface WorkspaceListProps {
   userId: number;
+  companyId: number;
+  userRole?: string;
 }
 
 interface Workspace {
@@ -27,9 +31,8 @@ interface Workspace {
       email: string;
       profileImage?: string;
     };
-  }[];
-  _count: {
-    tasks: number;
+  }[];  _count: {
+    groups: number;
     members: number;
   };
 }
@@ -37,6 +40,7 @@ interface Workspace {
 interface WorkspaceCardProps {
   workspace: Workspace;
   userRole: string;
+  isMember: boolean;
   onEdit: (workspace: Workspace) => void;
   onDelete: (id: number) => void;
   onJoin: (id: number) => void;
@@ -45,14 +49,21 @@ interface WorkspaceCardProps {
 const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
   workspace,
   userRole,
+  isMember,
   onEdit,
   onDelete,
   onJoin
 }) => {
+  const router = useRouter();
+
+  const handleViewDetails = () => {
+    router.push(`/workspaces/${workspace.id}`);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
-        <div>
+        <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">{workspace.name}</h3>
           {workspace.description && (
             <p className="text-gray-600 text-sm mt-1">{workspace.description}</p>
@@ -81,9 +92,8 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
         <div className="flex items-center">
           <UsersIcon className="w-4 h-4 mr-1" />
           <span>{workspace._count.members} miembros</span>
-        </div>
-        <div className="flex items-center">
-          <span>{workspace._count.tasks} tareas</span>
+        </div>        <div className="flex items-center">
+          <span>{workspace._count.groups} grupos</span>
         </div>
       </div>
 
@@ -115,16 +125,17 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({
                 +{workspace._count.members - 4}
               </span>
             </div>
-          )}
-        </div>
+          )}        </div>
 
-        <button
-          onClick={() => onJoin(workspace.id)}
-          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center"
-        >
-          <UserPlusIcon className="w-4 h-4 mr-1" />
-          Unirse
-        </button>
+        {!isMember && (
+          <button
+            onClick={() => onJoin(workspace.id)}
+            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center"
+          >
+            <UserPlusIcon className="w-4 h-4 mr-1" />
+            Unirse
+          </button>
+        )}
       </div>
     </div>
   );
@@ -209,22 +220,27 @@ const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
   );
 };
 
-const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
+const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId, companyId, userRole }) => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | undefined>();
-
-  useEffect(() => {
+  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | undefined>();  useEffect(() => {
     fetchWorkspaces();
-  }, []);
+  }, [companyId]); // Actualizar cuando cambie companyId
 
   const fetchWorkspaces = async () => {
     try {
-      const response = await fetch('/api/workspaces');
+      const response = await fetch(`/api/workspaces?companyId=${companyId}`, {
+        headers: {
+          'userid': userId.toString()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setWorkspaces(data);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al cargar las salas');
       }
     } catch (error) {
       console.error('Error fetching workspaces:', error);
@@ -232,9 +248,7 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSubmit = async (data: { name: string; description: string }) => {
+  };const handleSubmit = async (data: { name: string; description: string }) => {
     try {
       const url = editingWorkspace 
         ? `/api/workspaces/${editingWorkspace.id}`
@@ -242,10 +256,17 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
       
       const method = editingWorkspace ? 'PUT' : 'POST';
       
+      const requestBody = editingWorkspace 
+        ? data 
+        : { ...data, companyId };
+      
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        headers: { 
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
@@ -262,13 +283,15 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
       toast.error('Error al procesar la solicitud');
     }
   };
-
   const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta sala?')) return;
 
     try {
       const response = await fetch(`/api/workspaces/${id}`, {
         method: 'DELETE',
+        headers: {
+          'userid': userId.toString()
+        }
       });
 
       if (response.ok) {
@@ -282,12 +305,13 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
       console.error('Error deleting workspace:', error);
       toast.error('Error al eliminar la sala');
     }
-  };
-
-  const handleJoin = async (id: number) => {
+  };  const handleJoin = async (id: number) => {
     try {
       const response = await fetch(`/api/workspaces/${id}/join`, {
         method: 'POST',
+        headers: {
+          'userid': userId.toString()
+        }
       });
 
       if (response.ok) {
@@ -295,6 +319,12 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
         fetchWorkspaces();
       } else {
         const error = await response.json();
+        
+        // Mostrar alerta específica si ya es miembro
+        if (error.message === 'Ya eres miembro de esta sala') {
+          alert('Ya eres miembro de esta sala de trabajo');
+        }
+        
         toast.error(error.message || 'Error al unirse a la sala');
       }
     } catch (error) {
@@ -312,16 +342,17 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Salas de Trabajo</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nueva Sala
-        </button>
+        {(userRole === 'owner' || userRole === 'admin') && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Nueva Sala
+          </button>
+        )}
       </div>
 
       {workspaces.length === 0 ? (
@@ -334,21 +365,28 @@ const WorkspaceList: React.FC<WorkspaceListProps> = ({ userId }) => {
             Crea tu primera sala para comenzar a colaborar
           </p>
         </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {workspaces.map((workspace) => (
-            <WorkspaceCard
-              key={workspace.id}
-              workspace={workspace}
-              userRole="owner" // Esto debería venir de la sesión del usuario
-              onEdit={(ws) => {
-                setEditingWorkspace(ws);
-                setShowForm(true);
-              }}
-              onDelete={handleDelete}
-              onJoin={handleJoin}
-            />
-          ))}
+      ) : (        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {workspaces.map((workspace) => {
+            // Encontrar el rol del usuario actual en este workspace
+            const userMembership = workspace.members.find(member => member.user.id === userId);
+            const userRole = userMembership?.role || 'member';
+            const isMember = !!userMembership;
+            
+            return (
+              <WorkspaceCard
+                key={workspace.id}
+                workspace={workspace}
+                userRole={userRole}
+                isMember={isMember}
+                onEdit={(ws) => {
+                  setEditingWorkspace(ws);
+                  setShowForm(true);
+                }}
+                onDelete={handleDelete}
+                onJoin={handleJoin}
+              />
+            );
+          })}
         </div>
       )}
 

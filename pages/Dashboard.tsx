@@ -4,7 +4,7 @@ import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import Notifications from "@/components/Notification";
 import { FaBuilding, FaUsers, FaCog, FaSignOutAlt, FaUser, FaProjectDiagram, FaTasks, FaNewspaper, FaUsersCog } from "react-icons/fa";
-import "@/app/globals.css";
+
 
 interface CompanyDetails {
   id: number;

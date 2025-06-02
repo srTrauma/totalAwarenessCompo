@@ -7,7 +7,9 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  PaperClipIcon,
+  DocumentIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,6 +17,8 @@ import toast from 'react-hot-toast';
 
 interface TaskManagerProps {
   userId: number;
+  groupId?: number;
+  userRole?: string;
 }
 
 interface Task {
@@ -34,10 +38,35 @@ interface Task {
     id: number;
     name: string;
   };
+  group: {
+    id: number;
+    name: string;
+    workspace: {
+      id: number;
+      name: string;
+    };
+  } | null;
+  attachments: TaskAttachment[];
+}
+
+interface TaskAttachment {
+  id: number;
+  fileName: string;
+  filePath: string;
+  fileSize?: number;
+  mimeType?: string;
+  uploadedBy: number;
+  uploadedAt: string;
+  type: string;
+}
+
+interface WorkspaceGroup {
+  id: number;
+  name: string;
   workspace: {
     id: number;
     name: string;
-  } | null;
+  };
 }
 
 const priorityColors = {
@@ -160,9 +189,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
         )}
       </div>
 
-      {task.workspace && (
+      {task.group && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <span className="text-xs text-gray-500">Sala: {task.workspace.name}</span>
+          <span className="text-xs text-gray-500">
+            Grupo: {task.group.name} • Sala: {task.group.workspace.name}
+          </span>
         </div>
       )}
     </div>
@@ -171,12 +202,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
 
 interface TaskFormProps {
   task?: Task;
-  workspaces: { id: number; name: string }[];
+  groups: WorkspaceGroup[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, workspaces, onSubmit, onCancel }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel }) => {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 'medium');
@@ -184,7 +215,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, workspaces, onSubmit, onCance
   const [dueDate, setDueDate] = useState(
     task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : ''
   );
-  const [workspaceId, setWorkspaceId] = useState(task?.workspace?.id?.toString() || '');
+  const [groupId, setGroupId] = useState(task?.group?.id?.toString() || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,7 +230,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, workspaces, onSubmit, onCance
       priority,
       status,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-      workspaceId: workspaceId ? parseInt(workspaceId) : null
+      groupId: groupId ? parseInt(groupId) : null
     });
   };
 
@@ -284,20 +315,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, workspaces, onSubmit, onCance
             />
           </div>
 
-          {workspaces.length > 0 && (
+          {groups.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sala de trabajo
+                Grupo
               </label>
               <select
-                value={workspaceId}
-                onChange={(e) => setWorkspaceId(e.target.value)}
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Sin asignar</option>
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name}
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} ({group.workspace.name})
                   </option>
                 ))}
               </select>
@@ -325,9 +356,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, workspaces, onSubmit, onCance
   );
 };
 
-const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [workspaces, setWorkspaces] = useState<{ id: number; name: string }[]>([]);
+  const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -335,15 +366,23 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
 
   useEffect(() => {
     fetchTasks();
-    fetchWorkspaces();
-  }, []);
+    fetchGroups();
+  }, [groupId]);
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/tasks');
+      const url = groupId ? `/api/tasks?groupId=${groupId}` : '/api/tasks';
+      const response = await fetch(url, {
+        headers: {
+          'userid': userId.toString()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setTasks(data);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al cargar las tareas');
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -353,15 +392,22 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
     }
   };
 
-  const fetchWorkspaces = async () => {
+  const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/workspaces');
+      const response = await fetch('/api/groups', {
+        headers: {
+          'userid': userId.toString()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        setWorkspaces(data.map((ws: any) => ({ id: ws.id, name: ws.name })));
+        setGroups(data);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al cargar los grupos');
       }
     } catch (error) {
-      console.error('Error fetching workspaces:', error);
+      console.error('Error fetching groups:', error);
     }
   };
 
@@ -372,7 +418,10 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
       
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
         body: JSON.stringify(data),
       });
 
@@ -397,6 +446,9 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE',
+        headers: {
+          'userid': userId.toString()
+        }
       });
 
       if (response.ok) {
@@ -416,7 +468,10 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
         body: JSON.stringify({ status }),
       });
 
@@ -449,7 +504,9 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Tareas</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {groupId ? 'Tareas del Grupo' : 'Gestión de Tareas'}
+        </h2>
         <button
           onClick={() => setShowForm(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
@@ -504,7 +561,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId }) => {
       {showForm && (
         <TaskForm
           task={editingTask}
-          workspaces={workspaces}
+          groups={groups}
           onSubmit={handleSubmit}
           onCancel={() => {
             setShowForm(false);

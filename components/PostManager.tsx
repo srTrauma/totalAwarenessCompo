@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { 
   DocumentTextIcon,
   PlusIcon,
@@ -17,6 +18,8 @@ import toast from 'react-hot-toast';
 
 interface PostManagerProps {
   userId: number;
+  companyId: number;
+  userRole: string; // Agregar rol del usuario en la empresa
 }
 
 interface Post {
@@ -77,8 +80,13 @@ const PostCard: React.FC<PostCardProps> = ({
   onDelete, 
   onToggleActive 
 }) => {
+  const router = useRouter();
   const typeConfig = postTypeConfig[post.type as keyof typeof postTypeConfig] || postTypeConfig.general;
   const IconComponent = typeConfig.icon;
+
+  const handleViewPost = () => {
+    router.push(`/posts/${post.id}`);
+  };
 
   return (
     <div className={`bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow ${!post.isActive ? 'opacity-60' : ''}`}>
@@ -145,25 +153,32 @@ const PostCard: React.FC<PostCardProps> = ({
             className="w-full h-48 object-cover rounded-lg"
           />
         </div>
-      )}
-
-      <div className="mb-4">
-        <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+      )}      <div className="mb-4">
+        <p className="text-gray-700 whitespace-pre-wrap line-clamp-3">{post.content}</p>
       </div>
 
-      {post.linkUrl && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
+      {/* Botones de acción */}
+      <div className="flex justify-between items-center">
+        <button
+          onClick={handleViewPost}
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors text-sm"
+        >
+          <EyeIcon className="w-4 h-4 mr-1" />
+          Ver completo
+        </button>
+
+        {post.linkUrl && (
           <a
             href={post.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors text-sm"
           >
-            <LinkIcon className="w-4 h-4 mr-2" />
-            <span className="text-sm">Ver más información</span>
+            <LinkIcon className="w-4 h-4 mr-1" />
+            Enlace
           </a>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -171,16 +186,21 @@ const PostCard: React.FC<PostCardProps> = ({
 interface PostFormProps {
   post?: Post;
   companies: { id: number; name: string }[];
+  currentCompanyId?: number;
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
-const PostForm: React.FC<PostFormProps> = ({ post, companies, onSubmit, onCancel }) => {
+const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, onSubmit, onCancel }) => {
   const [title, setTitle] = useState(post?.title || '');
   const [content, setContent] = useState(post?.content || '');
   const [type, setType] = useState(post?.type || 'general');
   const [linkUrl, setLinkUrl] = useState(post?.linkUrl || '');
-  const [companyId, setCompanyId] = useState(post?.company?.id?.toString() || '');
+  const [companyId, setCompanyId] = useState(
+    post?.company?.id?.toString() || 
+    currentCompanyId?.toString() || 
+    ''
+  );
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(post?.imageUrl || null);
 
@@ -409,7 +429,7 @@ const PostForm: React.FC<PostFormProps> = ({ post, companies, onSubmit, onCancel
   );
 };
 
-const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
+const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -417,17 +437,26 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
   const [editingPost, setEditingPost] = useState<Post | undefined>();
   const [filter, setFilter] = useState('all');
 
+  // Solo owners y admins pueden crear posts
+  const canCreatePosts = userRole === 'OWNER' || userRole === 'ADMIN';
+
   useEffect(() => {
     fetchPosts();
     fetchCompanies();
   }, []);
-
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/posts');
+      const response = await fetch('/api/posts', {
+        headers: {
+          'userid': userId.toString()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setPosts(data);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al cargar los posts');
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -435,20 +464,31 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await fetch('/api/companies/list');
+  };  const fetchCompanies = async () => {
+    try {      const response = await fetch(`/api/companies/list?userId=${userId}`, {
+        headers: {
+          'userid': userId.toString()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        setCompanies(data.companies.map((c: any) => ({ id: c.id, name: c.name })));
+        // Filtrar para incluir solo la empresa actual si companyId está especificado
+        const availableCompanies = data.map((c: any) => ({ id: c.id, name: c.name }));
+        if (companyId) {
+          // Si se especifica una empresa, solo mostrar esa empresa
+          const currentCompany = availableCompanies.find((c: any) => c.id === companyId);
+          setCompanies(currentCompany ? [currentCompany] : availableCompanies);
+        } else {
+          setCompanies(availableCompanies);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error al cargar las empresas');
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
     }
   };
-
   const handleSubmit = async (data: any) => {
     try {
       const url = editingPost ? `/api/posts/${editingPost.id}` : '/api/posts';
@@ -456,7 +496,10 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
       
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
         body: JSON.stringify(data),
       });
 
@@ -474,13 +517,15 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
       toast.error('Error al procesar la solicitud');
     }
   };
-
   const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este post?')) return;
 
     try {
       const response = await fetch(`/api/posts/${id}`, {
         method: 'DELETE',
+        headers: {
+          'userid': userId.toString()
+        }
       });
 
       if (response.ok) {
@@ -495,12 +540,14 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
       toast.error('Error al eliminar el post');
     }
   };
-
   const handleToggleActive = async (id: number, isActive: boolean) => {
     try {
       const response = await fetch(`/api/posts/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
         body: JSON.stringify({ isActive }),
       });
 
@@ -533,16 +580,17 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Gestión de Posts</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nuevo Post
-        </button>
+        {canCreatePosts && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Nuevo Post
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -588,12 +636,11 @@ const PostManager: React.FC<PostManagerProps> = ({ userId }) => {
             />
           ))}
         </div>
-      )}
-
-      {showForm && (
+      )}      {showForm && (
         <PostForm
           post={editingPost}
           companies={companies}
+          currentCompanyId={companyId}
           onSubmit={handleSubmit}
           onCancel={() => {
             setShowForm(false);

@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import { FaUsers, FaCrown, FaUserShield, FaUser, FaUserClock, FaCheck, FaTimes, FaTrash, FaEdit } from "react-icons/fa";
-import "@/app/globals.css";
+
 
 interface Role {
   id: number;

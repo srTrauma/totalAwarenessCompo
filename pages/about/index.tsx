@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import "@/app/globals.css";
+
 import NavBar from '@/components/NavBar';
 import Head from 'next/head';
 import FooterMain from '@/components/FooterMain';

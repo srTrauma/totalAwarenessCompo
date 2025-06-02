@@ -7,7 +7,7 @@ import { FaUser, FaCog, FaSignOutAlt, FaChevronDown } from "react-icons/fa";
 function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ id: number; name: string; email: string; profileImage?: string } | null>(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -154,15 +154,22 @@ function NavBar() {
                 <div className="flex items-center space-x-4">
                   {/* Notificaciones */}
                   <Notifications userId={user.id} />
-                  
-                  {/* Dropdown de perfil */}
+                    {/* Dropdown de perfil */}
                   <div className="relative">
                     <button
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                       className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
                     >
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FaUser className="text-blue-600 text-sm" />
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-blue-100">
+                        {user.profileImage ? (
+                          <img 
+                            src={user.profileImage} 
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <FaUser className="text-blue-600 text-sm" />
+                        )}
                       </div>
                       <span className="text-sm font-medium">{user.name}</span>
                       <FaChevronDown className="text-xs" />

@@ -6,12 +6,14 @@ import toast from 'react-hot-toast';
 interface ProfileImageUploadProps {
   currentImage?: string;
   onImageChange: (imageUrl: string | null) => void;
+  userId?: number;
   className?: string;
 }
 
 const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
   currentImage,
   onImageChange,
+  userId,
   className = ''
 }) => {
   const [uploading, setUploading] = useState(false);
@@ -34,11 +36,13 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
     }
 
     setUploading(true);
-    
-    try {
+      try {
       // Crear FormData para enviar el archivo
       const formData = new FormData();
       formData.append('image', file);
+      if (userId) {
+        formData.append('userId', userId.toString());
+      }
 
       const response = await fetch('/api/upload-profile-image', {
         method: 'POST',
