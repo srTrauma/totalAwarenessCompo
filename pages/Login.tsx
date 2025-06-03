@@ -165,38 +165,37 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Inicio de sesion | Total Awareness</title>
+        <title>Inicio de sesión | Total Awareness</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-sky-200 to-blue-300">
+      <div className="min-h-screen bg-white text-blue-900 flex flex-col">
         <NavBar />
-
         <div className="flex justify-center items-center min-h-[calc(100vh-80px)] px-4 py-12">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transition-all duration-300 transform hover:scale-[1.02]">
+          <div className="bg-white border border-blue-100 rounded-2xl w-full max-w-md overflow-hidden shadow-sm">
             <div className="p-8">
               <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold text-gray-800">
+                <h1 className="text-3xl font-bold text-blue-900 mb-2">
                   {isLogin ? "Iniciar sesión" : "Crear cuenta"}
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-blue-700 mt-2">
                   {isLogin ? "Accede a tu cuenta" : "Únete a nosotros"}
                 </p>
               </div>
 
               {error && (
-                <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="mb-6 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+                <div className="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
                   {success}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-blue-400">
                     <FaUser />
                   </div>
                   <input
@@ -204,13 +203,13 @@ export default function Login() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Nombre de usuario"
-                    className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    className="pl-10 w-full p-3 border border-blue-100 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 text-blue-900 bg-white transition"
                     disabled={loading}
                   />
                 </div>
 
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-blue-400">
                     <FaLock />
                   </div>
                   <input
@@ -218,13 +217,13 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Contraseña"
-                    className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    className="pl-10 w-full p-3 border border-blue-100 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 text-blue-900 bg-white transition"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-400 hover:text-blue-700"
                   >
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -233,7 +232,7 @@ export default function Login() {
                 {!isLogin && (
                   <>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-blue-400">
                         <FaLock />
                       </div>
                       <input
@@ -241,20 +240,20 @@ export default function Login() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirmar contraseña"
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        className="pl-10 w-full p-3 border border-blue-100 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 text-blue-900 bg-white transition"
                         disabled={loading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-blue-400 hover:text-blue-700"
                       >
                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                       </button>
                     </div>
 
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-blue-400">
                         <FaEnvelope />
                       </div>
                       <input
@@ -262,7 +261,7 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Correo electrónico"
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        className="pl-10 w-full p-3 border border-blue-100 rounded-lg focus:outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100 text-blue-900 bg-white transition"
                         disabled={loading}
                       />
                     </div>
@@ -272,18 +271,18 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none disabled:opacity-50"
+                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 focus:outline-none disabled:opacity-50"
                 >
                   {loading ? "Procesando..." : isLogin ? "Iniciar sesión" : "Crear cuenta"}
                 </button>
               </form>
 
               <div className="mt-8 text-center">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-blue-700">
                   {isLogin ? "¿No tienes una cuenta?" : "¿Ya tienes una cuenta?"}
                   <button
                     onClick={toggleForm}
-                    className="ml-1 text-blue-600 hover:text-blue-800 font-semibold focus:outline-none"
+                    className="ml-1 text-blue-900 hover:underline font-semibold focus:outline-none"
                   >
                     {isLogin ? "Regístrate" : "Inicia sesión"}
                   </button>

@@ -1,63 +1,75 @@
+import Link from 'next/link';
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaGithub, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+
 export default function FooterMain() {
     return (
-        <footer className="text-center p-8 bg-gray-800 text-white">
-            <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-                {/* Presentation Column */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Total Awareness</h2>
-                    <p>Your go-to platform for comprehensive awareness and insights.</p>
+        <footer className="bg-white border-t border-blue-100 text-blue-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    {/* Company Info */}
+                    <div>
+                        <h2 className="text-xl font-light mb-4 tracking-tight">Total Awareness</h2>
+                        <p className="text-blue-800 mb-6 text-sm font-light leading-relaxed">
+                            Plataforma minimalista para la gestión empresarial, colaboración y análisis.
+                        </p>
+                        <div className="space-y-2 text-blue-700 text-sm">
+                            <div className="flex items-center">
+                                <FaEnvelope className="w-4 h-4 mr-2 text-blue-700" /> contacto@totalawareness.com
+                            </div>
+                            <div className="flex items-center">
+                                <FaPhone className="w-4 h-4 mr-2 text-blue-700" /> +34 600 123 456
+                            </div>
+                            <div className="flex items-center">
+                                <FaMapMarkerAlt className="w-4 h-4 mr-2 text-blue-700" /> Calle Innovación 42, Madrid
+                            </div>
+                        </div>
+                    </div>
+                    {/* Links */}
+                    <div>
+                        <h3 className="text-base font-semibold mb-4">Producto</h3>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="/workspaces" className="hover:underline hover:text-blue-600">Espacios de Trabajo</Link></li>
+                            <li><Link href="/tasks" className="hover:underline hover:text-blue-600">Gestión de Tareas</Link></li>
+                            <li><Link href="/companies/explore" className="hover:underline hover:text-blue-600">Empresas</Link></li>
+                            <li><Link href="/Dashboard" className="hover:underline hover:text-blue-600">Analytics</Link></li>
+                            <li><Link href="/posts" className="hover:underline hover:text-blue-600">Comunicación</Link></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="text-base font-semibold mb-4">Empresa</h3>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="/about" className="hover:underline hover:text-blue-600">Acerca de Nosotros</Link></li>
+                            <li><Link href="/contact" className="hover:underline hover:text-blue-600">Contacto</Link></li>
+                            <li><Link href="/faq" className="hover:underline hover:text-blue-600">Preguntas Frecuentes</Link></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="text-base font-semibold mb-4">Legal</h3>
+                        <ul className="space-y-2 text-sm">
+                            <li><Link href="/privacy" className="hover:underline hover:text-blue-600">Política de Privacidad</Link></li>
+                            <li><Link href="/terms" className="hover:underline hover:text-blue-600">Términos de Servicio</Link></li>
+                        </ul>
+                        <div className="mt-6">
+                            <h4 className="text-xs font-semibold mb-2">Síguenos</h4>
+                            <div className="flex space-x-3">
+                                <a href="#" aria-label="Twitter" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaTwitter /></a>
+                                <a href="#" aria-label="LinkedIn" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaLinkedinIn /></a>
+                                <a href="#" aria-label="Instagram" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaInstagram /></a>
+                                <a href="#" aria-label="GitHub" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaGithub /></a>
+                            </div>
+                        </div>
+                        <div className="mt-8">
+                            <h4 className="text-xs font-semibold mb-2">Newsletter</h4>
+                            <form className="flex items-center gap-2">
+                                <input type="email" placeholder="Tu email" className="px-3 py-2 border border-blue-100 rounded-md text-sm bg-white text-blue-900 focus:outline-none focus:border-blue-900" />
+                                <button type="submit" className="bg-blue-900 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-800 transition">Suscribirse</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                
-                {/* Social Media Column */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Follow Us</h2>
-                    <ul className="list-none p-0">
-                        <li className="mb-2">
-                            <a href="https://facebook.com" className="no-underline text-white hover:text-gray-400">Facebook</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="https://twitter.com" className="no-underline text-white hover:text-gray-400">Twitter</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="https://instagram.com" className="no-underline text-white hover:text-gray-400">Instagram</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="https://linkedin.com" className="no-underline text-white hover:text-gray-400">LinkedIn</a>
-                        </li>
-                    </ul>
+                <div className="mt-12 border-t border-blue-100 pt-6 text-xs text-blue-600 text-center">
+                    © {new Date().getFullYear()} Total Awareness. Todos los derechos reservados.
                 </div>
-                
-                {/* Navigation Column */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Navigation</h2>
-                    <ul className="list-none p-0">
-                        <li className="mb-2">
-                            <a href="/about" className="no-underline text-white hover:text-gray-400">About Us</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="/services" className="no-underline text-white hover:text-gray-400">Services</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="/contact" className="no-underline text-white hover:text-gray-400">Contact</a>
-                        </li>
-                    </ul>
-                </div>
-                
-                {/* Terms and Policies Column */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Legal</h2>
-                    <ul className="list-none p-0">
-                        <li className="mb-2">
-                            <a href="/privacy" className="no-underline text-white hover:text-gray-400">Privacy Policy</a>
-                        </li>
-                        <li className="mb-2">
-                            <a href="/terms" className="no-underline text-white hover:text-gray-400">Terms of Service</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div className="mt-8">
-                <p>&copy; 2024 Total Awareness. All rights reserved.</p>
             </div>
         </footer>
     );

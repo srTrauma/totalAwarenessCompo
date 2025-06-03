@@ -13,12 +13,14 @@ export default function PostsPage() {
   const [company, setCompany] = useState<{ id: number; name: string; currentUserRole?: { name: string } } | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [noCompanies, setNoCompanies] = useState(false);
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const selectedCompany = localStorage.getItem("selectedCompany");
     
     if (!storedUser) {
-      router.push("/CompanySelection");
+      router.push("/Login");
       return;
     }
 
@@ -30,8 +32,25 @@ export default function PostsPage() {
       setSelectedCompanyId(companyId);
       fetchCompanyDetails(companyId, parsedUser.id);
     } else {
-      // Si no hay empresa seleccionada, redirigir a selección de empresa
-      router.push("/CompanySelection");
+      // No hay empresa seleccionada: buscar la empresa por defecto o la primera
+      fetch(`/api/companies/list?userId=${parsedUser.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            // Buscar id=0, si no existe, usar la primera
+            const defaultCompany = data.find((c: any) => c.id === 0) || data[0];
+            localStorage.setItem("selectedCompany", String(defaultCompany.id));
+            setSelectedCompanyId(defaultCompany.id);
+            fetchCompanyDetails(defaultCompany.id, parsedUser.id);
+          } else {
+            setNoCompanies(true);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          setNoCompanies(true);
+          setLoading(false);
+        });
     }
   }, [router]);
   const fetchCompanyDetails = async (companyId: number, userId: number) => {
@@ -83,6 +102,24 @@ export default function PostsPage() {
         <NavBar />
         <div className="flex justify-center items-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </>
+    );
+  }
+
+  if (noCompanies) {
+    return (
+      <>
+        <Head>
+          <title>Sin empresas | Total Awareness</title>
+        </Head>
+        <NavBar />
+        <div className="flex flex-col items-center justify-center h-screen">
+          <div className="bg-white p-8 rounded-lg shadow-md text-center">
+            <h2 className="text-2xl font-semibold mb-4">No tienes empresas disponibles</h2>
+            <p className="mb-4 text-gray-600">Crea una empresa o únete a una existente para acceder a los posts de empresa.</p>
+            <button onClick={() => router.push('/CompanySelection')} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Ir a selección de empresa</button>
+          </div>
         </div>
       </>
     );

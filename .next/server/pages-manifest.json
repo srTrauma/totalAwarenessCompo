@@ -2,14 +2,11 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/CompanySelection": "pages/CompanySelection.js",
   "/api/notifications": "pages/api/notifications.js",
-  "/api/companies/list": "pages/api/companies/list.js",
-  "/api/posts": "pages/api/posts.js",
+  "/CompanySelection": "pages/CompanySelection.js",
   "/api/companies/detail": "pages/api/companies/detail.js",
-  "/workspaces": "pages/workspaces.js",
   "/api/companies/owned": "pages/api/companies/owned.js",
-  "/tasks": "pages/tasks.js",
-  "/posts": "pages/posts.js",
-  "/api/posts/[postId]": "pages/api/posts/[postId].js"
+  "/workspaces": "pages/workspaces.js",
+  "/api/workspaces": "pages/api/workspaces.js",
+  "/tasks": "pages/tasks.js"
 }

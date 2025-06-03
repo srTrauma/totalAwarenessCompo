@@ -138,7 +138,7 @@ function NavBar() {
                       Gestión de Empresas
                     </Link>
                     <Link href="/workspaces" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
-                      Salas de Trabajo
+                      Gestion de Salas de Trabajo
                     </Link>
                     <Link href="/tasks" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
                       Tareas
@@ -258,7 +258,7 @@ function NavBar() {
                       className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Salas de Trabajo
+                      Gestion de Salas de Trabajo
                     </Link>
                     <Link href="/tasks" 
                       className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
