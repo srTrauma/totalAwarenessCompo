@@ -1,5 +1,12 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+
+export const config = {
+  api: {
+    bodyParser: false, // Necesario para formidable
+  },
+};
 
 const prisma = new PrismaClient();
 
@@ -34,7 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { groupId: groupIdNum },
         include: {
           assignee: { select: { id: true, name: true, profileImage: true } },
-          creator: { select: { id: true, name: true } }
+          creator: { select: { id: true, name: true } },
+          attachments: true // <-- incluir adjuntos
         },
         orderBy: [ { dueDate: 'asc' }, { createdAt: 'desc' } ]
       });
@@ -47,6 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       const tasksWithGroupInfo = tasks.map(task => ({
         ...task,
+        attachments: Array.isArray(task.attachments) ? task.attachments : [],
         group: group ? {
           id: group.id,
           name: group.name,
@@ -55,8 +64,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }));
       res.status(200).json(tasksWithGroupInfo);
     } else if (req.method === 'POST') {
-      // Crear nueva tarea en el grupo
-      const { title, description, priority, status, dueDate, assigneeId } = req.body;
+      // Soportar multipart/form-data para adjuntos
+      let title = '', description = '', priority = '', status = '', dueDate = '', assigneeId = null;
+      let files: any[] = [];
+      if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        // Asegurar que la carpeta de uploads existe antes de usar formidable
+        const fs = await import('fs');
+        const uploadDir = './public/uploads/tasks';
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        // Importar formidable dinámicamente y soportar ambas formas (default y named)
+        const imported = await import('formidable');
+        const formidable = imported.default || imported;
+        // Usar formidable() directamente (no new ...)
+        const form = formidable({ multiples: true, keepExtensions: true, uploadDir });
+        await new Promise((resolve, reject) => {
+          form.parse(req, (err, fields, filesObj) => {
+            if (err) return reject(err);
+            title = Array.isArray(fields.title) ? fields.title[0] : fields.title || '';
+            description = Array.isArray(fields.description) ? fields.description[0] : fields.description || '';
+            priority = Array.isArray(fields.priority) ? fields.priority[0] : fields.priority || 'medium';
+            status = Array.isArray(fields.status) ? fields.status[0] : fields.status || 'pending';
+            dueDate = Array.isArray(fields.dueDate) ? fields.dueDate[0] : fields.dueDate || '';
+            assigneeId = Array.isArray(fields.assigneeId) ? fields.assigneeId[0] : fields.assigneeId || null;
+            // Archivos
+            if (filesObj.attachments) {
+              files = Array.isArray(filesObj.attachments) ? filesObj.attachments : [filesObj.attachments];
+            }
+            resolve(undefined);
+          });
+        });
+      } else {
+        // JSON plano
+        title = req.body.title;
+        description = req.body.description;
+        priority = req.body.priority;
+        status = req.body.status;
+        dueDate = req.body.dueDate;
+        assigneeId = req.body.assigneeId;
+      }
       // Verificar que el usuario tiene acceso al grupo
       const groupMember = await prisma.groupMember.findFirst({
         where: { groupId: groupIdNum, userId: userId }
@@ -75,10 +122,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (status && !validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Estado inválido' });
       }
-      // Verificar que el assignee (si se especifica) también tenga acceso al grupo
-      if (assigneeId && assigneeId !== userId) {
+      // No permitir crear tareas con estado 'cancelled'
+      if (status === 'cancelled') {
+        status = 'pending';
+      }
+      if (assigneeId && assigneeId != userId) {
         const assigneeAccess = await prisma.groupMember.findFirst({
-          where: { groupId: groupIdNum, userId: assigneeId }
+          where: { groupId: groupIdNum, userId: Number(assigneeId) }
         });
         if (!assigneeAccess) {
           return res.status(400).json({ message: 'El asignado no tiene acceso a este grupo' });
@@ -92,7 +142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: status || 'pending',
           dueDate: dueDate ? new Date(dueDate) : null,
           creatorId: userId,
-          assigneeId: assigneeId || userId,
+          assigneeId: assigneeId ? Number(assigneeId) : userId,
           groupId: groupIdNum
         },
         include: {
@@ -100,7 +150,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           creator: { select: { id: true, name: true } }
         }
       });
-      // Agregar información del grupo
+      // Guardar archivos adjuntos si hay
+      let attachments = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          let originalName = file.originalFilename || file.name || file.newFilename;
+          // Sanitizar el nombre (quitar caracteres peligrosos)
+          originalName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const uploadDir = './public/uploads/tasks';
+          let finalName = originalName;
+          let filePath = `${uploadDir}/${finalName}`;
+          let publicPath = `/uploads/tasks/${finalName}`;
+          const fs = await import('fs');
+          let i = 1;
+          // Si ya existe, añade sufijo
+          while (fs.existsSync(filePath)) {
+            const parts = originalName.split('.');
+            if (parts.length > 1) {
+              const ext = parts.pop();
+              finalName = `${parts.join('.')}(${i}).${ext}`;
+            } else {
+              finalName = `${originalName}(${i})`;
+            }
+            filePath = `${uploadDir}/${finalName}`;
+            publicPath = `/uploads/tasks/${finalName}`;
+            i++;
+          }
+          // Mover el archivo al nombre final si es necesario
+          if (file.filepath && file.filepath !== filePath) {
+            fs.renameSync(file.filepath, filePath);
+          }
+          const fileSize = file.size;
+          const mimeType = file.mimetype || file.type;
+          const attachment = await prisma.taskAttachment.create({
+            data: {
+              taskId: task.id,
+              fileName: originalName, // nombre original visible
+              filePath: publicPath,   // ruta pública
+              fileSize,
+              mimeType,
+              uploadedBy: userId,
+              type: 'general'
+            }
+          });
+          attachments.push(attachment);
+        }
+      }
+      // Si se está usando multipart/form-data, los adjuntos ya se procesan arriba
+      // Si es JSON plano, attachments no se procesan aquí (solo en uploads separados)
+      // ---
+      // Si no hay archivos subidos, attachmentsArr debe ser array vacío
+      // Si el método es JSON plano, files será [] y attachmentsArr también
+      // ---
+      // Si por alguna razón task no se creó, devolver error explícito
+      if (!task || !task.id) {
+        return res.status(500).json({ message: 'No se pudo crear la tarea' });
+      }
+      // Siempre devolver attachments como array
+      let attachmentsArr: any[] = [];
+      attachmentsArr = await prisma.taskAttachment.findMany({
+        where: { taskId: task.id },
+        orderBy: { uploadedAt: 'desc' }
+      });
       const group = await prisma.group.findUnique({
         where: { id: groupIdNum },
         include: {
@@ -113,8 +224,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: group.id,
           name: group.name,
           project: group.project
-        } : null
+        } : null,
+        attachments: attachmentsArr
       };
+      // --- DEPURACIÓN ---
+      // (Eliminados todos los logs de depuración para producción)
       res.status(201).json(taskWithGroup);
     } else {
       res.status(405).json({ message: 'Método no permitido' });

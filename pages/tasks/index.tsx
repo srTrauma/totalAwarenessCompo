@@ -4,7 +4,7 @@ import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import TaskManager from "@/components/TaskManager";
 import CompanySelector from "@/components/CompanySelector";
-import { FaArrowLeft, FaUsers, FaLayerGroup, FaTasks, FaChevronRight } from "react-icons/fa";
+import { FaArrowLeft, FaUsers, FaLayerGroup, FaTasks, FaChevronRight, FaPlus } from "react-icons/fa";
 
 
 interface Workspace {
@@ -40,6 +40,8 @@ export default function TasksPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [noCompanies, setNoCompanies] = useState(false);
+  // Estado para controlar el modal de creación de tarea
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -372,7 +374,7 @@ export default function TasksPage() {
                   <FaTasks className="mr-2 text-blue-600" />
                   Tareas en {selectedGroup.name}
                 </h2>
-                <div className="flex space-x-4">
+                <div className="flex space-x-4 items-center">
                   <button
                     onClick={handleBackToGroups}
                     className="text-blue-600 hover:underline text-sm"
@@ -385,12 +387,15 @@ export default function TasksPage() {
                   >
                     Cambiar proyecto
                   </button>
+                  {/* Botón Crear tarea solo para usuarios con permisos de gestión */}
+                  
                 </div>
               </div>
-                <TaskManager 
+              <TaskManager 
                 userId={user.id} 
                 projectId={selectedProject.id}
                 groupId={selectedGroup.id}
+                userRole={company.currentUserRole?.name?.toLowerCase() || 'member'}
               />
             </div>
           )}

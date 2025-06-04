@@ -64,7 +64,7 @@ interface TaskAttachment {
 interface Group {
   id: number;
   name: string;
-  project: {
+  project?: {
     id: number;
     name: string;
   };
@@ -103,9 +103,10 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: string) => void;
+  onCompleteWithFiles?: (task: Task) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusChange }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusChange, onCompleteWithFiles }) => {
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
@@ -177,24 +178,61 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
               <span className="text-sm text-gray-600">{task.assignee.name}</span>
             </div>
           )}
-        </div>
-
-        {task.status !== 'completed' && (
-          <button
-            onClick={() => onStatusChange(task.id, task.status === 'pending' ? 'in_progress' : 'completed')}
-            className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-          >
-            <CheckCircleIcon className="w-4 h-4 mr-1" />
-            {task.status === 'pending' ? 'Iniciar' : 'Completar'}
-          </button>
+        </div>        {task.status !== 'completed' && (
+          <div className="flex space-x-2">
+            {task.status === 'in_progress' && onCompleteWithFiles && (
+              <button
+                onClick={() => onCompleteWithFiles(task)}
+                className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+              >
+                <PaperClipIcon className="w-4 h-4 mr-1" />
+                Completar con archivos
+              </button>
+            )}
+            <button
+              onClick={() => onStatusChange(task.id, task.status === 'pending' ? 'in_progress' : 'completed')}
+              className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              <CheckCircleIcon className="w-4 h-4 mr-1" />
+              {task.status === 'pending' ? 'Iniciar' : 'Completar'}
+            </button>
+          </div>
         )}
-      </div>
-
-      {task.group && (
+      </div>      {task.group && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <span className="text-xs text-gray-500">
-            Grupo: {task.group.name} • Proyecto: {task.group.project.name}
+            Grupo: {task.group.name} • Proyecto: {task.group.project?.name || 'Sin proyecto'}
           </span>
+        </div>
+      )}
+
+      {/* Mostrar attachments si existen */}
+      {task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center text-xs text-gray-500 mb-2">
+            <PaperClipIcon className="w-3 h-3 mr-1" />
+            <span>{task.attachments.length} archivo(s) adjunto(s)</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {task.attachments.slice(0, 3).map((attachment) => (
+              <a
+                key={attachment.id}
+                href={attachment.filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded truncate max-w-32"
+                title={attachment.fileName}
+              >
+                <DocumentIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{attachment.fileName}</span>
+              </a>
+            ))}
+            {task.attachments.length > 3 && (
+              <span className="text-xs text-gray-400 px-2 py-1">
+                +{task.attachments.length - 3} más
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -217,7 +255,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
     task?.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : ''
   );
   const [groupId, setGroupId] = useState(task?.group?.id?.toString() || '');
-
+  const [attachments, setAttachments] = useState<File[]>([]);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -225,14 +263,27 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
       return;
     }
 
-    onSubmit({
+    const formData = {
       title: title.trim(),
       description: description.trim() || null,
       priority,
       status,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-      groupId: groupId ? parseInt(groupId) : null
-    });
+      groupId: groupId ? parseInt(groupId) : null,
+      attachments: attachments
+    };
+
+    onSubmit(formData);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(Array.from(e.target.files));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -314,9 +365,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
-
-          {groups.length > 0 && (
+          </div>          {groups.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Grupo
@@ -325,16 +374,44 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
                 value={groupId}
                 onChange={(e) => setGroupId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Sin asignar</option>
+              >                <option value="">Sin asignar</option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
-                    {group.name} ({group.project.name})
+                    {group.name} {group.project?.name ? `(${group.project.name})` : ''}
                   </option>
                 ))}
               </select>
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Archivos adjuntos
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
+            />
+            {attachments.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {attachments.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                    <span className="text-sm text-gray-600 truncate flex-1">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex space-x-3 pt-4">
             <button
@@ -357,6 +434,95 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
   );
 };
 
+interface CompleteTaskFormProps {
+  task: Task;
+  onSubmit: (files: File[]) => void;
+  onCancel: () => void;
+}
+
+const CompleteTaskForm: React.FC<CompleteTaskFormProps> = ({ task, onSubmit, onCancel }) => {
+  const [files, setFiles] = useState<File[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(files);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+        <h3 className="text-lg font-semibold mb-4">
+          Completar Tarea: {task.title}
+        </h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Archivos de entrega
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Puedes seleccionar múltiples archivos para adjuntar
+            </p>
+          </div>
+
+          {files.length > 0 && (
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Archivos seleccionados:
+              </label>
+              {files.map((file, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                  <span className="text-sm text-gray-600 truncate flex-1">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="text-red-500 hover:text-red-700 ml-2"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Completar Tarea
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -364,6 +530,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [filter, setFilter] = useState('all');
+  const [showCompleteForm, setShowCompleteForm] = useState(false);
+  const [completingTask, setCompletingTask] = useState<Task | undefined>();
 
   useEffect(() => {
     fetchTasks();
@@ -412,23 +580,61 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
     } catch (error) {
       console.error('Error fetching groups:', error);
     }
-  };
-
-  const handleSubmit = async (data: any) => {
-    if (!projectId || !groupId) return;
+  };  const handleSubmit = async (data: any) => {
+    if (!projectId || !groupId) {
+      toast.error('Project ID y Group ID son requeridos');
+      return;
+    }
+    
     try {
       const url = editingTask
-        ? `/api/projects/${projectId}/groups/${groupId}/tasks/${editingTask.id}`
+        ? `/api/tasks/test-put?taskId=${editingTask.id}`
         : `/api/projects/${projectId}/groups/${groupId}/tasks`;
       const method = editingTask ? 'PUT' : 'POST';
+      
+      let body;
+      let headers: any = {
+        'userid': userId.toString()
+      };
+
+      // Si hay archivos adjuntos, usar FormData
+      if (data.attachments && data.attachments.length > 0 && !editingTask) {
+        const formData = new FormData();
+        
+        // Agregar campos de texto
+        formData.append('title', data.title);
+        if (data.description) formData.append('description', data.description);
+        formData.append('priority', data.priority);
+        formData.append('status', data.status);
+        if (data.dueDate) formData.append('dueDate', data.dueDate);
+        if (data.groupId) formData.append('groupId', data.groupId.toString());
+        
+        // Agregar archivos
+        data.attachments.forEach((file: File) => {
+          formData.append('attachments', file);
+        });
+        
+        body = formData;
+        // No establecer Content-Type, el navegador lo hará automáticamente con boundary
+      } else {
+        // Usar JSON para actualizaciones o cuando no hay archivos
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          status: data.status,
+          dueDate: data.dueDate,
+          groupId: data.groupId
+        });
+      }
+
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'userid': userId.toString()
-        },
-        body: JSON.stringify(data),
+        headers,
+        body,
       });
+
       if (response.ok) {
         toast.success(editingTask ? 'Tarea actualizada' : 'Tarea creada');
         setShowForm(false);
@@ -442,12 +648,11 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
       console.error('Error submitting task:', error);
       toast.error('Error al procesar la solicitud');
     }
-  };
-
-  const handleDelete = async (id: number) => {
+  };  const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
 
     try {
+      // Usar endpoint real de eliminación
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE',
         headers: {
@@ -455,16 +660,84 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
         }
       });
 
+      
+      
       if (response.ok) {
-        toast.success('Tarea eliminada');
-        fetchTasks();
+        const result = await response.json();
+        
+        toast.success('Tarea eliminada correctamente');
+        fetchTasks(); // Recargar tareas
       } else {
         const error = await response.json();
+        
         toast.error(error.message || 'Error al eliminar la tarea');
       }
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Error al eliminar la tarea');
+    }
+  };
+
+  const handleCompleteWithFiles = (task: Task) => {
+    setCompletingTask(task);
+    setShowCompleteForm(true);
+  };  const handleCompleteSubmit = async (files: File[]) => {
+    if (!completingTask) return;
+    
+    try {
+      // Primero actualizar el estado a completed
+      const updateResponse = await fetch(`/api/tasks/test-put?taskId=${completingTask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'userid': userId.toString()
+        },
+        body: JSON.stringify({
+          title: completingTask.title,
+          description: completingTask.description || '',
+          priority: completingTask.priority,
+          status: 'completed',
+          dueDate: completingTask.dueDate,
+          groupId: completingTask.group?.id || null,
+          assigneeId: completingTask.assignee?.id || null
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const error = await updateResponse.json();
+        toast.error(error.message || 'Error al completar la tarea');
+        return;
+      }
+
+      // Si hay archivos, subirlos como attachments
+      if (files.length > 0) {
+        const formData = new FormData();
+        files.forEach(file => {
+          formData.append('attachments', file);
+        });
+
+        const attachResponse = await fetch(`/api/tasks/${completingTask.id}/attachments`, {
+          method: 'POST',
+          headers: {
+            'userid': userId.toString()
+          },
+          body: formData,
+        });
+
+        if (!attachResponse.ok) {
+          const error = await attachResponse.json();
+          toast.error(error.message || 'Error al subir archivos');
+          return;
+        }
+      }
+
+      toast.success('Tarea completada' + (files.length > 0 ? ' con archivos adjuntos' : ''));
+      setShowCompleteForm(false);
+      setCompletingTask(undefined);
+      fetchTasks();
+    } catch (error) {
+      console.error('Error completing task with files:', error);
+      toast.error('Error al completar la tarea');
     }
   };
 
@@ -514,10 +787,15 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
             <option value="in_progress">En Progreso</option>
             <option value="completed">Completadas</option>
             <option value="cancelled">Canceladas</option>
-          </select>
-          <button
+          </select>          <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            disabled={!projectId || !groupId}
+            className={`inline-flex items-center px-3 py-2 rounded-md transition-colors text-sm ${
+              !projectId || !groupId
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+            title={!projectId || !groupId ? 'Selecciona un proyecto y grupo primero' : ''}
           >
             <PlusIcon className="w-4 h-4 mr-1" />
             Nueva Tarea
@@ -535,8 +813,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
             <div className="text-center py-4">
               <span className="text-gray-500">No hay tareas disponibles</span>
             </div>
-          ) : (
-            filteredTasks.map((task) => (
+          ) : (            filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -546,13 +823,12 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
                 }}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                onCompleteWithFiles={handleCompleteWithFiles}
               />
             ))
           )}
         </div>
-      )}
-
-      {showForm && (
+      )}      {showForm && (
         <TaskForm
           task={editingTask}
           groups={groups}
@@ -560,6 +836,17 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
           onCancel={() => {
             setShowForm(false);
             setEditingTask(undefined);
+          }}
+        />
+      )}
+
+      {showCompleteForm && completingTask && (
+        <CompleteTaskForm
+          task={completingTask}
+          onSubmit={handleCompleteSubmit}
+          onCancel={() => {
+            setShowCompleteForm(false);
+            setCompletingTask(undefined);
           }}
         />
       )}

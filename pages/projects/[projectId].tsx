@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import GroupManager from "@/components/GroupManager";
-import { FaArrowLeft, FaUsers, FaPlus, FaCog, FaLayerGroup } from "react-icons/fa";
+import { FaArrowLeft, FaUsers, FaPlus, FaCog, FaLayerGroup, FaUserPlus, FaTrash } from "react-icons/fa";
 
 interface Project {
   id: number;
@@ -51,6 +51,11 @@ export default function ProjectDetailsPage() {
   const [inviteRole, setInviteRole] = useState("MEMBER");
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "members" | "groups">("overview");
+  const [isCompanyUser, setIsCompanyUser] = useState<boolean | null>(null);
+  // --- NUEVO: CRUD de miembros para admins ---
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [companyUsers, setCompanyUsers] = useState<any[]>([]);
+  const [addingMemberId, setAddingMemberId] = useState<number | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -64,6 +69,30 @@ export default function ProjectDetailsPage() {
       fetchProjectDetails(Number(projectId), parsedUser.id);
     }
   }, [projectId, router]);
+
+  // Nueva comprobación: ¿el usuario pertenece a la empresa?
+  useEffect(() => {
+    if (!projectId || !user) return;
+    const checkCompanyUser = async () => {
+      try {
+        // Obtener el proyecto para saber el companyId
+        const resProject = await fetch(`/api/projects/${projectId}?userId=${user.id}`);
+        if (!resProject.ok) return setIsCompanyUser(false);
+        const projectData = await resProject.json();
+        const companyId = projectData.companyId;
+        if (!companyId) return setIsCompanyUser(false);
+        const res = await fetch(`/api/companies/${companyId}/users`, {
+          headers: { userid: user.id.toString() }
+        });
+        if (!res.ok) return setIsCompanyUser(false);
+        const users = await res.json();
+        setIsCompanyUser(users.some((u: any) => u.id === user.id));
+      } catch {
+        setIsCompanyUser(false);
+      }
+    };
+    checkCompanyUser();
+  }, [projectId, user]);
 
   const fetchProjectDetails = async (projectId: number, userId: number) => {
     try {
@@ -137,7 +166,92 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  if (loading) {
+  // Determinar si el usuario es miembro del proyecto
+  const isProjectMember = project?.members?.some(m => m.user.id === user?.id);
+  const [joiningProject, setJoiningProject] = useState(false);
+
+  // Unirse al proyecto (como miembro normal)
+  const handleJoinProject = async () => {
+    if (!projectId || !user) return;
+    setJoiningProject(true);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', userid: user.id.toString() },
+        body: JSON.stringify({ userId: user.id })
+      });
+      if (response.ok) {
+        await fetchProjectDetails(Number(projectId), user.id);
+      }
+    } catch (e) {
+      // Silenciar error
+    } finally {
+      setJoiningProject(false);
+    }
+  };
+
+  // Cargar usuarios de la empresa (para admins)
+  useEffect(() => {
+    if (!project?.companyId || !user) return;
+    const fetchCompanyUsers = async () => {
+      try {
+        const res = await fetch(`/api/companies/${project.companyId}/users`, {
+          headers: { userid: user.id.toString() }
+        });
+        if (res.ok) {
+          const users = await res.json();
+          setCompanyUsers(users);
+        }
+      } catch {}
+    };
+    if (project.canManage) fetchCompanyUsers();
+  }, [project?.companyId, user, project?.canManage]);
+
+  // Añadir miembro al proyecto
+  const handleAddMemberToProject = async (memberUserId: number) => {
+    if (!projectId || !user) return;
+    setAddingMemberId(memberUserId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', userid: user.id.toString() },
+        body: JSON.stringify({ userId: memberUserId })
+      });
+      if (response.ok) {
+        await fetchProjectDetails(Number(projectId), user.id);
+        setShowAddMemberModal(false);
+      }
+    } catch {}
+    finally {
+      setAddingMemberId(null);
+    }
+  };
+
+  if (isCompanyUser === false) {
+    return (
+      <>
+        <Head>
+          <title>Acceso denegado | Total Awareness</title>
+        </Head>
+        <NavBar />
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="p-6 bg-red-50 rounded-lg border border-red-200">
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Acceso denegado</h2>
+            <p className="text-red-600">No perteneces a la empresa de este proyecto.</p>
+            <div className="mt-4">
+              <button
+                onClick={() => router.push("/projects")}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Volver a proyectos
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+  if (isCompanyUser === null || loading) {
     return (
       <>
         <Head>
@@ -205,12 +319,6 @@ export default function ProjectDetailsPage() {
                       className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     >
                       <FaPlus className="mr-2" /> Invitar miembro
-                    </button>
-                    <button
-                      onClick={() => router.push(`/projects/${project.id}/edit`)}
-                      className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                    >
-                      <FaCog className="mr-2" /> Configurar
                     </button>
                   </div>
                 )}
@@ -290,7 +398,75 @@ export default function ProjectDetailsPage() {
                 </div>
               )}
               {activeTab === 'members' && (
-                <div>
+                <div>                 
+                  {/* Botón para unirse al proyecto si es usuario de la empresa pero no miembro */}
+                  {!project.canManage && !isProjectMember && (
+                    <div className="mb-6 flex flex-col items-center justify-center">
+                      <p className="mb-2 text-gray-700 text-center">No eres miembro de este proyecto. Únete para poder participar en los grupos y tareas.</p>
+                      <button
+                        onClick={handleJoinProject}
+                        disabled={joiningProject}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-semibold disabled:opacity-50"
+                      >
+                        {joiningProject ? 'Uniéndote...' : 'Unirse al proyecto'}
+                      </button>
+                    </div>
+                  )}
+                  {/* CRUD de miembros para admins */}
+                  {project.canManage && (
+                    <div className="mb-6 flex flex-col items-center justify-center">
+                      <button
+                        onClick={() => setShowAddMemberModal(true)}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 mb-2"
+                      >
+                        <FaUserPlus /> Añadir miembro
+                      </button>
+                    </div>
+                  )}
+                  {/* Modal para añadir miembro (solo admins) */}
+                  {showAddMemberModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-medium mb-4">Agregar Miembro al Proyecto</h3>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {companyUsers
+                            .filter(userItem => !project.members.some(m => m.user.id === userItem.id))
+                            .map((userItem) => (
+                              <button
+                                key={userItem.id}
+                                onClick={() => handleAddMemberToProject(userItem.id)}
+                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-100 rounded-lg transition-colors"
+                                disabled={addingMemberId === userItem.id}
+                              >
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center">
+                                  {userItem.profileImage ? (
+                                    <img src={userItem.profileImage} alt={userItem.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span className="text-sm text-blue-600">{userItem.name.charAt(0).toUpperCase()}</span>
+                                  )}
+                                </div>
+                                <div className="text-left">
+                                  <p className="font-medium">{userItem.name}</p>
+                                  <p className="text-sm text-gray-600">{userItem.email}</p>
+                                </div>
+                                {addingMemberId === userItem.id && (
+                                  <svg className="animate-spin h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                                )}
+                              </button>
+                            ))}
+                          {companyUsers.filter(userItem => !project.members.some(m => m.user.id === userItem.id)).length === 0 && (
+                            <div className="text-gray-500 text-sm">Todos los usuarios de la empresa ya están en el proyecto.</div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setShowAddMemberModal(false)}
+                          className="mt-4 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors w-full"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-4">
                     {project.members.map((member) => (
                       <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -335,7 +511,7 @@ export default function ProjectDetailsPage() {
               )}
               {activeTab === 'groups' && (
                 <GroupManager 
-                  workspaceId={project.id}
+                  projectId={project.id}
                   userId={user!.id}
                   userRole={project.canManage ? 'admin' : 'member'}
                 />

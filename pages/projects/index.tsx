@@ -43,8 +43,7 @@ export default function ProjectsPage() {
     if (selectedCompany) {
       const companyId = Number(selectedCompany);
       setSelectedCompanyId(companyId);
-      fetchCompanyDetails(companyId, parsedUser.id);
-    } else {
+      fetchCompanyDetails(companyId, parsedUser.id);    } else {
       fetch(`/api/companies/list?userId=${parsedUser.id}`)
         .then(res => res.json())
         .then(data => {
@@ -259,6 +258,35 @@ export default function ProjectsPage() {
     fetchGroupMembers(projectId, groupId);
     fetchGroupTasks(projectId, groupId);
   };
+  // Función para eliminar proyecto
+  const handleDeleteProject = async (projectId: number, projectName: string) => {
+    if (!user || !confirm(`¿Estás seguro de que quieres eliminar el proyecto "${projectName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
+    try {
+      const res = await fetch("/api/projects", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: projectId,
+          userId: user.id,
+        }),
+      });
+      
+      if (res.ok) {
+        if (typeof selectedCompanyId === "number") {
+          fetchProjects(selectedCompanyId);
+        }
+        alert("Proyecto eliminado exitosamente");
+      } else {
+        const error = await res.json();
+        alert(error.message || "Error al eliminar proyecto");
+      }
+    } catch (err) {
+      alert("Error al eliminar proyecto");
+    }
+  };
 
   if (loading) {
     return (
@@ -392,20 +420,31 @@ export default function ProjectsPage() {
                   <h3 className="font-semibold text-gray-900 mb-2">{project.name}</h3>
                   {project.description && (
                     <p className="text-gray-600 text-sm mb-3">{project.description}</p>
-                  )}
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                  )}                  <div className="flex items-center text-sm text-gray-500 mb-2">
                     <span>{project._count?.groups ?? 0} grupos</span>
                   </div>
-                  <button
-                    className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setSelectedProjectForGroup(project);
-                      setShowGroupForm(true);
-                    }}
-                  >
-                    + Nuevo Grupo
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      className="flex-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedProjectForGroup(project);
+                        setShowGroupForm(true);
+                      }}
+                    >
+                      + Nuevo Grupo
+                    </button>
+                    <button
+                      className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDeleteProject(project.id, project.name);
+                      }}
+                      title="Eliminar proyecto"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                   {/* Mostrar grupos del proyecto */}
                   {project.groups && project.groups.length > 0 && (
                     <div className="mt-4">

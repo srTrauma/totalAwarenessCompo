@@ -92,8 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
-      // Aquí se enviaría un email de invitación...
-      console.log(`Invitación enviada a ${email}`);
+      
     } else {
       // Verificar si el usuario ya es miembro del workspace
       const existingMembership = await prisma.workspaceMember.findFirst({
@@ -159,8 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         });
 
-        // Aquí se enviaría un email de invitación...
-        console.log(`Invitación enviada a ${email}`);
+       
       }
     }
 

@@ -29,15 +29,10 @@ export default function CompanySelector({
   useEffect(() => {
     fetchOwnedCompanies();
   }, [userId]);
-
   const fetchOwnedCompanies = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/companies/owned', {
-        headers: {
-          userid: userId.toString()
-        }
-      });
+      const response = await fetch(`/api/companies/list?userId=${userId}`);
 
       if (response.ok) {
         const companies = await response.json();
@@ -47,7 +42,7 @@ export default function CompanySelector({
         setError(errorData.message || 'Error al cargar empresas');
       }
     } catch (error) {
-      console.error('Error al cargar empresas propias:', error);
+      console.error('Error al cargar empresas:', error);
       setError('Error al conectar con el servidor');
     } finally {
       setLoading(false);

@@ -13,13 +13,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       res.status(200).json(faqs);
     } else if (req.method === "POST") {
-      console.log("POST request body:", req.body);
+     
       
       const { question, answer, profile, userId, userName } = req.body;
 
       // Validación de pregunta (requerida)
       if (!question) {
-        console.log("Validation error: question is missing");
+        
         return res.status(400).json({
           message: "La pregunta es requerida",
           field: "question",
@@ -28,7 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (typeof question !== 'string' || question.trim().length === 0) {
-        console.log("Validation error: question is empty or not string");
         return res.status(400).json({
           message: "La pregunta es requerida y debe ser un texto válido",
           field: "question",
@@ -46,13 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const createdByUserId = userId ? parseInt(userId) : null;
       const createdByUserName = userName && typeof userName === 'string' ? userName.trim() : null;
 
-      console.log("Creating FAQ with data:", {
-        question: question.trim(),
-        answer: answerValue,
-        profile: profileValue,
-        createdByUserId,
-        createdByUserName
-      });
+     
 
       const newFaq = await prisma.faq.create({
         data: {
@@ -68,10 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      console.log("FAQ created successfully:", newFaq);
       res.status(201).json(newFaq);
     } else if (req.method === "PATCH") {
-      console.log("PATCH request body:", req.body);
       
       const { id, question, answer, profile, userId, userName } = req.body;
 
@@ -124,15 +115,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updateData.profile = profile && typeof profile === 'string' && profile.trim().length > 0 ? profile.trim() : null;
       }
 
-      console.log("Updating FAQ with data:", updateData);
-
       const updatedFaq = await prisma.faq.update({
         where: { id: parseInt(id) },
         data: updateData
       });
 
       res.status(200).json(updatedFaq);    } else if (req.method === "DELETE") {
-      console.log("DELETE request body:", req.body);
       
       const { id, userId, action } = req.body;
 

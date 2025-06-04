@@ -88,10 +88,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
           },
         },
-      });
-      return res.status(201).json(project);
+      });      return res.status(201).json(project);
     } catch (error) {
       console.error('Error al crear proyecto:', error);
+      return res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  } else if (req.method === 'DELETE') {
+    // Eliminar proyecto
+    const { projectId, userId } = req.body;
+    if (!projectId || !userId) {
+      return res.status(400).json({ message: 'projectId y userId son requeridos' });
+    }
+    
+    try {
+      // Verificar que el proyecto existe
+      const project = await prisma.project.findUnique({
+        where: { id: Number(projectId) },
+        include: {
+          company: {
+            select: { ownerId: true }
+          }
+        }
+      });
+      
+      if (!project) {
+        return res.status(404).json({ message: 'Proyecto no encontrado' });
+      }
+      
+      // Verificar permisos: debe ser owner del proyecto o owner de la empresa
+      const membership = await prisma.projectMember.findFirst({
+        where: {
+          projectId: Number(projectId),
+          userId: Number(userId),
+          role: 'owner'
+        }
+      });
+      
+      const isCompanyOwner = project.company.ownerId === Number(userId);
+      
+      if (!membership && !isCompanyOwner) {
+        return res.status(403).json({ message: 'No tienes permisos para eliminar este proyecto' });
+      }
+      
+      // Eliminar el proyecto (las relaciones se eliminan automáticamente por CASCADE)
+      await prisma.project.delete({
+        where: { id: Number(projectId) }
+      });
+      
+      return res.status(200).json({ message: 'Proyecto eliminado exitosamente' });
+    } catch (error) {
+      console.error('Error al eliminar proyecto:', error);
       return res.status(500).json({ message: 'Error interno del servidor' });
     }
   } else {

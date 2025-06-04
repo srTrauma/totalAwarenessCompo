@@ -1,6 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
 
+export const config = {
+  api: {
+    bodyParser: false, // Necesario para formidable
+  },
+};
+
 const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -43,16 +49,104 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ message: 'Tarea no encontrada o sin acceso' });
       }
 
-      const attachments = await prisma.taskAttachment.findMany({
+      let attachments = await prisma.taskAttachment.findMany({
         where: { taskId: taskIdNum },
         orderBy: { uploadedAt: 'desc' }
       });
 
-      res.status(200).json(attachments);
+      // Filtrar archivos de tipo 'completion_proof' solo para el creador
+      if (task.creatorId !== userId) {
+        attachments = attachments.filter(att => att.type !== 'completion_proof');
+      }
 
-    } else if (req.method === 'POST') {
-      // Crear registro de archivo adjunto (por ahora sin subida física)
-      const { fileName, filePath, fileSize, mimeType, type } = req.body;
+      res.status(200).json(attachments);    } else if (req.method === 'POST') {
+      // Permitir subida física de archivo adjunto (multipart/form-data)
+      let files: Array<{
+        fileName: string;
+        filePath: string;
+        fileSize: number;
+        mimeType: string;
+      }> = [];
+      let type = 'general';
+      
+      if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        // Asegurar carpeta
+        const fs = await import('fs');
+        const uploadDir = './public/uploads/tasks';
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        
+        // Importar formidable
+        const imported = await import('formidable');
+        const formidable = imported.default || imported;
+        const form = formidable({ multiples: true, keepExtensions: true, uploadDir });
+        
+        await new Promise((resolve, reject) => {
+          form.parse(req, (err, fields, filesObj) => {
+            if (err) return reject(err);
+            
+            // Buscar archivos en diferentes campos posibles
+            let fileList = filesObj.attachments || filesObj.attachment || filesObj.file || [];
+            if (!Array.isArray(fileList)) fileList = [fileList];
+            
+            // Procesar cada archivo
+            for (const file of fileList) {
+              if (file) {
+                let originalName = file.originalFilename || file.newFilename;
+                originalName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+                
+                let finalName = originalName;
+                let filePath = `${uploadDir}/${finalName}`;
+                let publicPath = `/uploads/tasks/${finalName}`;
+                
+                let i = 1;
+                while (fs.existsSync(filePath)) {
+                  const parts = originalName.split('.');
+                  if (parts.length > 1) {
+                    const ext = parts.pop();
+                    finalName = `${parts.join('.')}(${i}).${ext}`;
+                  } else {
+                    finalName = `${originalName}(${i})`;
+                  }
+                  filePath = `${uploadDir}/${finalName}`;
+                  publicPath = `/uploads/tasks/${finalName}`;
+                  i++;
+                }
+                
+                if (file.filepath && file.filepath !== filePath) {
+                  fs.renameSync(file.filepath, filePath);
+                }
+                
+                files.push({
+                  fileName: originalName,
+                  filePath: publicPath,
+                  fileSize: file.size,
+                  mimeType: file.mimetype || 'application/octet-stream'
+                });
+              }
+            }
+            
+            // type puede venir como array si es enviado por form-data
+            if (fields.type) {
+              type = Array.isArray(fields.type) ? fields.type[0] : fields.type;
+            } else {
+              type = 'completion';
+            }
+            
+            resolve(undefined);
+          });
+        });
+      } else {
+        // JSON plano (registro manual) - un solo archivo
+        files = [{
+          fileName: req.body.fileName,
+          filePath: req.body.filePath,
+          fileSize: req.body.fileSize || 0,
+          mimeType: req.body.mimeType || 'application/octet-stream'
+        }];
+        type = req.body.type || 'general';
+      }
       
       // Verificar acceso a la tarea
       const task = await prisma.task.findFirst({
@@ -73,29 +167,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ]
         }
       });
-
+      
       if (!task) {
         return res.status(404).json({ message: 'Tarea no encontrada o sin acceso' });
       }
-
-      if (!fileName || !filePath) {
-        return res.status(400).json({ message: 'Nombre y ruta del archivo son requeridos' });
+      
+      if (files.length === 0) {
+        return res.status(400).json({ message: 'No se encontraron archivos para subir' });
       }
-
-      // Crear registro en base de datos
-      const attachment = await prisma.taskAttachment.create({
-        data: {
-          taskId: taskIdNum,
-          fileName: fileName,
-          filePath: filePath,
-          fileSize: fileSize || 0,
-          mimeType: mimeType || 'application/octet-stream',
-          uploadedBy: userId,
-          type: type || 'general'
+      
+      // Crear registros en base de datos para todos los archivos
+      const attachments = [];
+      for (const file of files) {
+        if (file.fileName && file.filePath) {
+          const attachment = await prisma.taskAttachment.create({
+            data: {
+              taskId: taskIdNum,
+              fileName: file.fileName,
+              filePath: file.filePath,
+              fileSize: file.fileSize,
+              mimeType: file.mimeType,
+              uploadedBy: userId,
+              type: type
+            }
+          });
+          attachments.push(attachment);
         }
+      }
+      
+      res.status(201).json({ 
+        message: `${attachments.length} archivo(s) subido(s) correctamente`,
+        attachments: attachments 
       });
-
-      res.status(201).json(attachment);
 
     } else if (req.method === 'DELETE') {
       // Eliminar archivo adjunto específico

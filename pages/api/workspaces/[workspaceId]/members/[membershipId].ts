@@ -113,15 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    if (!otherWorkspaceMemberships) {
-      // El usuario ya no pertenece a ningún workspace de esta compañía
-      // Opcionalmente, podríamos eliminar su membresía de la compañía
-      // pero esto es una decisión de diseño
-      
-      // Por ahora, simplemente registramos este hecho
-      console.log(`Usuario ${membership.user.name} ya no pertenece a ningún workspace de la compañía ID ${workspace.companyId}`);
-    }
-
     return res.status(200).json({
       message: `${membership.user.name} ha sido eliminado de la sala de trabajo`
     });

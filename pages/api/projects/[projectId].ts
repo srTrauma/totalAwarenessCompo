@@ -16,7 +16,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ message: 'ID de proyecto o usuario inválido' });
     }
 
-    // Verificar si el usuario tiene acceso a este proyecto
+    // Obtener el proyecto con datos básicos (siempre)
+    const projectBasic = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        companyId: true,
+        company: { select: { id: true, name: true } },
+      },
+    });
+    if (!projectBasic) {
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
+    }
+
+    // Verificar si el usuario pertenece a la empresa (tabla userCompany)
+    const companyUser = await prisma.userCompany.findFirst({
+      where: {
+        companyId: projectBasic.companyId,
+        userId: userId,
+      },
+    });
+    if (!companyUser) {
+      return res.status(403).json({ message: 'No tienes acceso a este proyecto' });
+    }
+
+    // Verificar si el usuario es miembro del proyecto
     const membership = await prisma.projectMember.findFirst({
       where: {
         projectId,
@@ -24,26 +50,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
+    // NUEVO: comprobar si es owner de la empresa
+    const company = await prisma.company.findUnique({
+      where: { id: projectBasic.companyId },
+      select: { ownerId: true }
+    });
+    const isCompanyOwner = company && company.ownerId === userId;
+
     if (!membership) {
-      return res.status(403).json({ message: 'No tienes acceso a este proyecto' });
+      // Si NO es miembro, devolver solo datos básicos
+      return res.status(200).json({
+        ...projectBasic,
+        members: [],
+        groups: [],
+        canManage: isCompanyOwner, // <-- ahora el owner de la empresa puede gestionar aunque no sea miembro
+      });
     }
 
-    // Obtener el proyecto con datos relacionados
+    // Si es miembro, devolver todos los datos completos
     const project = await prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
+      where: { id: projectId },
       select: {
         id: true,
         name: true,
         description: true,
         companyId: true,
-        company: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        company: { select: { id: true, name: true } },
         members: {
           select: {
             id: true,
@@ -59,33 +91,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               },
             },
           },
-          orderBy: {
-            joinedAt: 'desc',
-          },
+          orderBy: { joinedAt: 'desc' },
         },
         groups: {
           select: {
             id: true,
             name: true,
             description: true,
-            _count: {
-              select: {
-                tasks: true,
-              },
-            },
+            _count: { select: { tasks: true } },
           },
         },
       },
     });
-
     if (!project) {
       return res.status(404).json({ message: 'Proyecto no encontrado' });
     }
-
-    // Determinar si el usuario puede gestionar el proyecto (si es admin)
-    const canManage = membership.role === 'ADMIN';
-
-    // Procesar los datos para el formato esperado en el frontend
+    const canManage = membership.role === 'ADMIN' || membership.role === 'OWNER' || isCompanyOwner;
     const formattedProject = {
       ...project,
       groups: project.groups.map(group => ({
@@ -96,7 +117,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })),
       canManage,
     };
-
     return res.status(200).json(formattedProject);
   } catch (error) {
     console.error('Error al obtener proyecto:', error);
