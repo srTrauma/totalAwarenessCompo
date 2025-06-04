@@ -2,11 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/tasks": "pages/tasks.js",
   "/api/notifications": "pages/api/notifications.js",
-  "/CompanySelection": "pages/CompanySelection.js",
-  "/api/companies/detail": "pages/api/companies/detail.js",
-  "/api/companies/owned": "pages/api/companies/owned.js",
-  "/workspaces": "pages/workspaces.js",
-  "/api/workspaces": "pages/api/workspaces.js",
-  "/tasks": "pages/tasks.js"
+  "/projects/[projectId]": "pages/projects/[projectId].js",
+  "/projects": "pages/projects.js"
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
-import TaskManagerNew from "@/components/TaskManagerNew";
+import TaskManager from "@/components/TaskManager";
 import CompanySelector from "@/components/CompanySelector";
 import { FaArrowLeft, FaUsers, FaLayerGroup, FaTasks, FaChevronRight } from "react-icons/fa";
 
@@ -21,13 +21,21 @@ interface Group {
   taskCount: number;
 }
 
+// Reemplazar Workspace por Project en interfaces y estados
+interface Project {
+  id: number;
+  name: string;
+  description: string | null;
+  groupCount: number;
+}
+
 export default function TasksPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const [company, setCompany] = useState<{ id: number; name: string; currentUserRole?: { name: string } } | null>(null);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +90,7 @@ export default function TasksPage() {
       if (response.ok) {
         const data = await response.json();
         setCompany(data);
-        fetchWorkspaces(companyId, userId);
+        fetchProjects(companyId, userId);
       } else {
         const error = await response.json();
         console.error('Error loading company details:', error);
@@ -103,9 +111,9 @@ export default function TasksPage() {
       setLoading(true);
       
       // Resetear selecciones actuales
-      setSelectedWorkspace(null);
+      setSelectedProject(null);
       setSelectedGroup(null);
-      setWorkspaces([]);
+      setProjects([]);
       setGroups([]);
       
       // Actualizar localStorage
@@ -119,9 +127,10 @@ export default function TasksPage() {
     }
   };
 
-  const fetchWorkspaces = async (companyId: number, userId: number) => {
+  // Cambiar fetchWorkspaces a fetchProjects
+  const fetchProjects = async (companyId: number, userId: number) => {
     try {
-      const response = await fetch(`/api/workspaces?companyId=${companyId}`, {
+      const response = await fetch(`/api/projects?companyId=${companyId}`, {
         headers: {
           userid: userId.toString()
         }
@@ -129,18 +138,19 @@ export default function TasksPage() {
       
       if (response.ok) {
         const data = await response.json();
-        setWorkspaces(data);
+        setProjects(data);
       } else {
-        console.error('Error loading workspaces');
+        console.error('Error loading projects');
       }
     } catch (error) {
-      console.error('Error fetching workspaces:', error);
+      console.error('Error fetching projects:', error);
     }
   };
 
-  const fetchGroups = async (workspaceId: number) => {
+  // Cambiar fetchGroups para usar projectId
+  const fetchGroups = async (projectId: number) => {
     try {
-      const response = await fetch(`/api/workspaces/${workspaceId}/groups`, {
+      const response = await fetch(`/api/projects/${projectId}/groups`, {
         headers: {
           userid: user!.id.toString()
         }
@@ -157,19 +167,20 @@ export default function TasksPage() {
     }
   };
 
-  const handleWorkspaceSelect = (workspace: Workspace) => {
-    setSelectedWorkspace(workspace);
+  // Cambiar handleWorkspaceSelect a handleProjectSelect
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
     setSelectedGroup(null);
     setGroups([]);
-    fetchGroups(workspace.id);
+    fetchGroups(project.id);
   };
 
   const handleGroupSelect = (group: Group) => {
     setSelectedGroup(group);
   };
 
-  const handleBackToWorkspaces = () => {
-    setSelectedWorkspace(null);
+  const handleBackToProjects = () => {
+    setSelectedProject(null);
     setSelectedGroup(null);
     setGroups([]);
   };
@@ -236,10 +247,10 @@ export default function TasksPage() {
             {/* Breadcrumb */}
             <div className="flex items-center text-sm text-gray-600 mb-4">
               <span>{company.name}</span>
-              {selectedWorkspace && (
+              {selectedProject && (
                 <>
                   <FaChevronRight className="mx-2 text-gray-400" />
-                  <span>{selectedWorkspace.name}</span>
+                  <span>{selectedProject.name}</span>
                 </>
               )}
               {selectedGroup && (
@@ -263,41 +274,41 @@ export default function TasksPage() {
                 )}
               </div>              <p className="text-gray-600">
                 Organiza tu trabajo, establece prioridades y da seguimiento al progreso de tus tareas.
-                Las tareas se organizan por grupos dentro de las salas de trabajo.
+                Las tareas se organizan por grupos dentro de los proyectos.
               </p>
             </div>
           </div>
 
-          {/* Mostrar selección de workspace si no hay uno seleccionado */}
-          {!selectedWorkspace && (
+          {/* Mostrar selección de proyecto si no hay uno seleccionado */}
+          {!selectedProject && (
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <FaUsers className="mr-2 text-blue-600" />
-                Selecciona una Sala de Trabajo
+                Selecciona un Proyecto
               </h2>
-              {workspaces.length === 0 ? (
+              {projects.length === 0 ? (
                 <div className="text-center py-8">
                   <FaUsers className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-600">No hay salas de trabajo disponibles.</p>
+                  <p className="text-gray-600">No hay proyectos disponibles.</p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Contacta con el administrador de la empresa para crear salas de trabajo.
+                    Contacta con el administrador de la empresa para crear proyectos.
                   </p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {workspaces.map((workspace) => (
+                  {projects.map((project) => (
                     <div
-                      key={workspace.id}
-                      onClick={() => handleWorkspaceSelect(workspace)}
+                      key={project.id}
+                      onClick={() => handleProjectSelect(project)}
                       className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
                     >
-                      <h3 className="font-semibold text-gray-900 mb-2">{workspace.name}</h3>
-                      {workspace.description && (
-                        <p className="text-gray-600 text-sm mb-3">{workspace.description}</p>
+                      <h3 className="font-semibold text-gray-900 mb-2">{project.name}</h3>
+                      {project.description && (
+                        <p className="text-gray-600 text-sm mb-3">{project.description}</p>
                       )}
                       <div className="flex items-center text-sm text-gray-500">
                         <FaLayerGroup className="mr-1" />
-                        <span>{workspace.groupCount} grupos</span>
+                        <span>{project.groupCount} grupos</span>
                       </div>
                     </div>
                   ))}
@@ -306,26 +317,26 @@ export default function TasksPage() {
             </div>
           )}
 
-          {/* Mostrar selección de grupo si hay workspace seleccionado pero no grupo */}
-          {selectedWorkspace && !selectedGroup && (
+          {/* Mostrar selección de grupo si hay proyecto seleccionado pero no grupo */}
+          {selectedProject && !selectedGroup && (
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                   <FaLayerGroup className="mr-2 text-blue-600" />
-                  Grupos en {selectedWorkspace.name}
+                  Grupos en {selectedProject.name}
                 </h2>
                 <button
-                  onClick={handleBackToWorkspaces}
+                  onClick={handleBackToProjects}
                   className="text-blue-600 hover:underline text-sm"
                 >
-                  Cambiar sala de trabajo
+                  Cambiar proyecto
                 </button>
               </div>
               
               {groups.length === 0 ? (
                 <div className="text-center py-8">
                   <FaLayerGroup className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-600">No hay grupos en esta sala de trabajo.</p>
+                  <p className="text-gray-600">No hay grupos en este proyecto.</p>
                   <p className="text-sm text-gray-500 mt-2">
                     Los grupos organizan las tareas por categorías o equipos.
                   </p>
@@ -354,7 +365,7 @@ export default function TasksPage() {
           )}
 
           {/* Mostrar TaskManager cuando hay grupo seleccionado */}
-          {selectedWorkspace && selectedGroup && (
+          {selectedProject && selectedGroup && (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -369,15 +380,16 @@ export default function TasksPage() {
                     Cambiar grupo
                   </button>
                   <button
-                    onClick={handleBackToWorkspaces}
+                    onClick={handleBackToProjects}
                     className="text-blue-600 hover:underline text-sm"
                   >
-                    Cambiar sala de trabajo
+                    Cambiar proyecto
                   </button>
                 </div>
               </div>
-                <TaskManagerNew 
+                <TaskManager 
                 userId={user.id} 
+                projectId={selectedProject.id}
                 groupId={selectedGroup.id}
               />
             </div>

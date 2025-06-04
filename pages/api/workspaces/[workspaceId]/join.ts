@@ -9,10 +9,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { workspaceId } = req.query;
-  const workspaceIdNum = parseInt(workspaceId as string);
+  const projectIdNum = parseInt(workspaceId as string);
 
-  if (isNaN(workspaceIdNum)) {
-    return res.status(400).json({ message: 'ID de sala inválido' });
+  if (isNaN(projectIdNum)) {
+    return res.status(400).json({ message: 'ID de proyecto inválido' });
   }
 
   try {
@@ -22,10 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    // Verificar que la sala existe y está activa
-    const workspace = await prisma.workspace.findFirst({
+    // Verificar que el proyecto existe y está activo
+    const project = await prisma.project.findFirst({
       where: {
-        id: workspaceIdNum,
+        id: projectIdNum,
         isActive: true
       },
       include: {
@@ -39,40 +39,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-    if (!workspace) {
-      return res.status(404).json({ message: 'Sala no encontrada o inactiva' });
+    if (!project) {
+      return res.status(404).json({ message: 'Proyecto no encontrado o inactivo' });
     }
 
     // Verificar que el usuario es miembro de la empresa
     const companyMembership = await prisma.userCompany.findFirst({
       where: {
         userId: userId,
-        companyId: workspace.companyId,
+        companyId: project.companyId,
         approved: true
       }
     });
 
     if (!companyMembership) {
-      return res.status(403).json({ message: 'Debes ser miembro de la empresa para unirte a esta sala' });
+      return res.status(403).json({ message: 'Debes ser miembro de la empresa para unirte a este proyecto' });
     }
 
-    // Verificar que no sea ya miembro de la sala
-    const existingMembership = await prisma.workspaceMember.findFirst({
+    // Verificar que no sea ya miembro del proyecto
+    const existingMembership = await prisma.projectMember.findFirst({
       where: {
         userId: userId,
-        workspaceId: workspaceIdNum
+        projectId: projectIdNum
       }
     });
 
     if (existingMembership) {
-      return res.status(400).json({ message: 'Ya eres miembro de esta sala' });
+      return res.status(400).json({ message: 'Ya eres miembro de este proyecto' });
     }
 
-    // Unirse a la sala
-    const newMembership = await prisma.workspaceMember.create({
+    // Unirse al proyecto
+    const newMembership = await prisma.projectMember.create({
       data: {
         userId: userId,
-        workspaceId: workspaceIdNum,
+        projectId: projectIdNum,
         role: 'member'
       },
       include: {
@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             profileImage: true
           }
         },
-        workspace: {
+        project: {
           select: {
             id: true,
             name: true,
@@ -95,12 +95,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     res.status(201).json({
-      message: 'Te has unido a la sala correctamente',
+      message: 'Te has unido al proyecto correctamente',
       membership: newMembership
     });
 
   } catch (error) {
-    console.error('Error joining workspace:', error);
+    console.error('Error joining project:', error);
     res.status(500).json({ 
       message: 'Error interno del servidor',
       error: process.env.NODE_ENV === 'development' ? error : 'Error interno'

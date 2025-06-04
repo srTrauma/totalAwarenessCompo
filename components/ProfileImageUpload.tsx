@@ -23,9 +23,9 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
     const file = acceptedFiles[0];
     if (!file) return;
 
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no puede exceder 5MB');
+    // Validar tamaño (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('La imagen no puede exceder 2MB');
       return;
     }
 
@@ -71,7 +71,7 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
       'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
     },
     multiple: false,
-    maxSize: 5 * 1024 * 1024 // 5MB
+    maxSize: 2 * 1024 * 1024 // 2MB
   });
 
   const removeImage = () => {

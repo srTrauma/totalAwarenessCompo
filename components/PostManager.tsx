@@ -566,88 +566,39 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
 
   const filteredPosts = posts.filter(post => {
     if (filter === 'all') return true;
-    if (filter === 'active') return post.isActive;
-    if (filter === 'inactive') return !post.isActive;
     return post.type === filter;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Posts</h2>
-        {canCreatePosts && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Nuevo Post
-          </button>
-        )}
-      </div>
-
-      {/* Filtros */}
-      <div className="flex items-center space-x-4">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">Todos los posts</option>
-          <option value="active">Activos</option>
-          <option value="inactive">Inactivos</option>
-          <option value="general">General</option>
-          <option value="job_offer">Ofertas de empleo</option>
-          <option value="news">Noticias</option>
-          <option value="event">Eventos</option>
-        </select>
-      </div>
-
-      {filteredPosts.length === 0 ? (
-        <div className="text-center py-12">
-          <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No hay posts
-          </h3>
-          <p className="text-gray-500">
-            Crea tu primer post para comenzar a compartir contenido
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              isOwner={true} // Esto debería venir de la sesión del usuario
-              onEdit={(post) => {
-                setEditingPost(post);
-                setShowForm(true);
-              }}
-              onDelete={handleDelete}
-              onToggleActive={handleToggleActive}
-            />
-          ))}
-        </div>
-      )}      {showForm && (
+    <div>
+      {canCreatePosts && (
+        <button onClick={() => setShowForm(true)} className="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md">
+          Crear nuevo post
+        </button>
+      )}
+      {/* Renderiza el formulario solo si showForm es true */}
+      {showForm && (
         <PostForm
-          post={editingPost}
           companies={companies}
           currentCompanyId={companyId}
           onSubmit={handleSubmit}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingPost(undefined);
-          }}
+          onCancel={() => setShowForm(false)}
+          post={editingPost}
         />
       )}
+      {/* Lista de posts */}
+      <div className="space-y-4">
+        {posts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            isOwner={userId === post.author.id}
+            onEdit={setEditingPost}
+            onDelete={handleDelete}
+            onToggleActive={handleToggleActive}
+          />
+        ))}
+      </div>
     </div>
   );
 };

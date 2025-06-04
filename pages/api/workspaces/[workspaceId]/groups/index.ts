@@ -12,30 +12,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (!workspaceId || isNaN(Number(workspaceId))) {
-    return res.status(400).json({ message: "ID de workspace inválido" });
+    return res.status(400).json({ message: "ID de proyecto inválido" });
   }
 
-  const workspaceIdNum = Number(workspaceId);
+  const projectIdNum = Number(workspaceId);
   const userIdNum = Number(userId);
 
   try {
-    // Verificar que el usuario es miembro del workspace
-    const membership = await prisma.workspaceMember.findFirst({
+    // Verificar que el usuario es miembro del proyecto
+    const membership = await prisma.projectMember.findFirst({
       where: {
         userId: userIdNum,
-        workspaceId: workspaceIdNum
+        projectId: projectIdNum
       }
     });
 
     if (!membership) {
-      return res.status(403).json({ message: "No tienes acceso a este workspace" });
+      return res.status(403).json({ message: "No tienes acceso a este proyecto" });
     }
 
     if (req.method === "GET") {
-      // Obtener todos los grupos del workspace
-      const groups = await prisma.workspaceGroup.findMany({
+      // Obtener todos los grupos del proyecto
+      const groups = await prisma.group.findMany({
         where: {
-          workspaceId: workspaceIdNum
+          projectId: projectIdNum
         },
         include: {
           members: {
@@ -60,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: "desc"
         }
       });
-
       return res.status(200).json(groups);
     }
 
@@ -71,28 +70,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const { name, description } = req.body;
-
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "El nombre del grupo es obligatorio" });
       }
 
-      // Verificar que no existe otro grupo con el mismo nombre en el workspace
-      const existingGroup = await prisma.workspaceGroup.findFirst({
+      // Verificar que no existe otro grupo con el mismo nombre en el proyecto
+      const existingGroup = await prisma.group.findFirst({
         where: {
-          workspaceId: workspaceIdNum,
+          projectId: projectIdNum,
           name: name.trim()
         }
       });
-
       if (existingGroup) {
-        return res.status(400).json({ message: "Ya existe un grupo con ese nombre en este workspace" });
+        return res.status(400).json({ message: "Ya existe un grupo con ese nombre en este proyecto" });
       }
 
-      const newGroup = await prisma.workspaceGroup.create({
+      const newGroup = await prisma.group.create({
         data: {
           name: name.trim(),
           description: description?.trim() || null,
-          workspaceId: workspaceIdNum
+          projectId: projectIdNum
         },
         include: {
           members: {
@@ -125,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // Recargar el grupo con la información del miembro
-      const groupWithMembers = await prisma.workspaceGroup.findUnique({
+      const groupWithMembers = await prisma.group.findUnique({
         where: { id: newGroup.id },
         include: {
           members: {
@@ -147,7 +144,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
       });
-
       return res.status(201).json(groupWithMembers);
     }
 

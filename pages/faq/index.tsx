@@ -8,6 +8,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  faqProfile?: string; // Añadido campo opcional para el perfil de respuesta
 }
 
 interface Faq {
@@ -20,6 +21,7 @@ interface Faq {
   respondedByUserName: string | null;
   respondedAt: string | null;
   createdAt: string;
+  profile?: string; // Añadido campo opcional para el perfil de respuesta
 }
 
 const FAQPage = () => {
@@ -74,7 +76,8 @@ const FAQPage = () => {
         body: JSON.stringify({ 
           question: newQuestion,
           userId: user.id,
-          userName: user.name
+          userName: user.name,
+          profile: user.faqProfile // Enviar perfil al crear pregunta
         }),
       });
 
@@ -106,7 +109,8 @@ const FAQPage = () => {
           id, 
           answer: responseText[id],
           userId: user.id,
-          userName: user.name
+          userName: user.name,
+          profile: user.faqProfile // Enviar perfil al responder pregunta
         }),
       });
 
@@ -389,6 +393,11 @@ const FAQPage = () => {
                             {!user?.id ? 'Debes estar logueado para responder preguntas.' : 'Esta pregunta ya tiene respuesta.'}
                           </p>
                         )}
+                      </div>
+                    )}
+                    {faq.profile && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <span className="text-blue-900 font-medium">Perfil: {faq.profile}</span>
                       </div>
                     )}
                   </div>

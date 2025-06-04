@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 
 interface TaskManagerProps {
   userId: number;
+  projectId: number;
   groupId?: number;
   userRole?: string;
 }
@@ -41,7 +42,7 @@ interface Task {
   group: {
     id: number;
     name: string;
-    workspace: {
+    project: {
       id: number;
       name: string;
     };
@@ -60,10 +61,10 @@ interface TaskAttachment {
   type: string;
 }
 
-interface WorkspaceGroup {
+interface Group {
   id: number;
   name: string;
-  workspace: {
+  project: {
     id: number;
     name: string;
   };
@@ -192,7 +193,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
       {task.group && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <span className="text-xs text-gray-500">
-            Grupo: {task.group.name} • Sala: {task.group.workspace.name}
+            Grupo: {task.group.name} • Proyecto: {task.group.project.name}
           </span>
         </div>
       )}
@@ -202,7 +203,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
 
 interface TaskFormProps {
   task?: Task;
-  groups: WorkspaceGroup[];
+  groups: Group[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
@@ -328,7 +329,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
                 <option value="">Sin asignar</option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
-                    {group.name} ({group.workspace.name})
+                    {group.name} ({group.project.name})
                   </option>
                 ))}
               </select>
@@ -356,9 +357,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
   );
 };
 
-const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [groups, setGroups] = useState<WorkspaceGroup[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -367,11 +368,12 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
   useEffect(() => {
     fetchTasks();
     fetchGroups();
-  }, [groupId]);
+  }, [groupId, projectId]);
 
   const fetchTasks = async () => {
+    if (!projectId || !groupId) return;
     try {
-      const url = groupId ? `/api/tasks?groupId=${groupId}` : '/api/tasks';
+      const url = `/api/projects/${projectId}/groups/${groupId}/tasks`;
       const response = await fetch(url, {
         headers: {
           'userid': userId.toString()
@@ -393,8 +395,9 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
   };
 
   const fetchGroups = async () => {
+    if (!projectId) return;
     try {
-      const response = await fetch('/api/groups', {
+      const response = await fetch(`/api/projects/${projectId}/groups`, {
         headers: {
           'userid': userId.toString()
         }
@@ -412,19 +415,20 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
   };
 
   const handleSubmit = async (data: any) => {
+    if (!projectId || !groupId) return;
     try {
-      const url = editingTask ? `/api/tasks/${editingTask.id}` : '/api/tasks';
+      const url = editingTask
+        ? `/api/projects/${projectId}/groups/${groupId}/tasks/${editingTask.id}`
+        : `/api/projects/${projectId}/groups/${groupId}/tasks`;
       const method = editingTask ? 'PUT' : 'POST';
-      
       const response = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'userid': userId.toString()
         },
         body: JSON.stringify(data),
       });
-
       if (response.ok) {
         toast.success(editingTask ? 'Tarea actualizada' : 'Tarea creada');
         setShowForm(false);
@@ -493,68 +497,58 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, groupId }) => {
     return task.status === filter;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {groupId ? 'Tareas del Grupo' : 'Gestión de Tareas'}
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">
+          {groups.length > 0 ? 'Tareas del Grupo' : 'Tareas'}
         </h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Nueva Tarea
-        </button>
+        <div className="flex space-x-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="all">Todas</option>
+            <option value="pending">Pendientes</option>
+            <option value="in_progress">En Progreso</option>
+            <option value="completed">Completadas</option>
+            <option value="cancelled">Canceladas</option>
+          </select>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+          >
+            <PlusIcon className="w-4 h-4 mr-1" />
+            Nueva Tarea
+          </button>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <div className="flex items-center space-x-4">
-        <FunnelIcon className="w-5 h-5 text-gray-400" />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">Todas las tareas</option>
-          <option value="pending">Pendientes</option>
-          <option value="in_progress">En progreso</option>
-          <option value="completed">Completadas</option>
-        </select>
-      </div>
-
-      {filteredTasks.length === 0 ? (
-        <div className="text-center py-12">
-          <ClipboardDocumentListIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {filter === 'all' ? 'No hay tareas' : `No hay tareas ${statusLabels[filter as keyof typeof statusLabels]?.toLowerCase()}`}
-          </h3>
-          <p className="text-gray-500">
-            {filter === 'all' ? 'Crea tu primera tarea para comenzar' : 'Cambia el filtro para ver otras tareas'}
-          </p>
+      {loading ? (
+        <div className="text-center py-4">
+          <span className="text-gray-500">Cargando tareas...</span>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={(task) => {
-                setEditingTask(task);
-                setShowForm(true);
-              }}
-              onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
+        <div className="space-y-4">
+          {filteredTasks.length === 0 ? (
+            <div className="text-center py-4">
+              <span className="text-gray-500">No hay tareas disponibles</span>
+            </div>
+          ) : (
+            filteredTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={(task) => {
+                  setEditingTask(task);
+                  setShowForm(true);
+                }}
+                onDelete={handleDelete}
+                onStatusChange={handleStatusChange}
+              />
+            ))
+          )}
         </div>
       )}
 

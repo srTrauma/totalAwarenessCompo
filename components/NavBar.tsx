@@ -137,7 +137,7 @@ function NavBar() {
                     <Link href="/CompanySelection" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
                       Gestión de Empresas
                     </Link>
-                    <Link href="/workspaces" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
+                    <Link href="/projects" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
                       Gestion de Salas de Trabajo
                     </Link>
                     <Link href="/tasks" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
@@ -254,7 +254,7 @@ function NavBar() {
                     >
                       Gestión de Empresas
                     </Link>
-                    <Link href="/workspaces" 
+                    <Link href="/projects" 
                       className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
                       onClick={() => setIsMenuOpen(false)}
                     >

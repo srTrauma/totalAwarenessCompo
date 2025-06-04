@@ -23,10 +23,10 @@ model User {
   emailConfirmationToken String?                // <-- Añadido para confirmación de email  // Nuevas relaciones para tareas y salas
   assignedTasks Task[]        @relation("TaskAssignee")
   createdTasks  Task[]        @relation("TaskCreator")
-  workspaceMembers WorkspaceMember[]
   groupMembers  GroupMember[] // Miembro de grupos
   posts         Post[]
   invitations   Invitation[]
+  projectMemberships ProjectMember[]
 }
 
 model Company {
@@ -39,7 +39,7 @@ model Company {
   ownerId     Int
   owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id])
   members     UserCompany[]
-  workspaces  Workspace[]   // Relación con salas de trabajo
+  projects    Project[]     // Relación con proyectos
   posts       Post[]        // Relación con posts
   invitations Invitation[]
   
@@ -93,55 +93,53 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-// Modelo para Salas de Trabajo (ahora obligatoriamente de empresa)
-model Workspace {
-  id          Int      @id @default(autoincrement())
+// Modelo para Proyectos
+model Project {
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
-  companyId   Int      // Obligatorio, siempre pertenece a una empresa
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  isActive    Boolean  @default(true)
-  members     WorkspaceMember[]
-  groups      WorkspaceGroup[] // Grupos dentro del workspace
+  companyId   Int
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isActive    Boolean   @default(true)
+  members     ProjectMember[]
+  groups      Group[]
   invitations Invitation[]
 }
 
-// Miembros de las Salas de Trabajo
-model WorkspaceMember {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  workspaceId Int
-  role        String    @default("member") // owner, admin, member
-  joinedAt    DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, workspaceId])
+// Miembros de Proyectos
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  projectId Int
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@unique([userId, projectId])
 }
 
-// Grupos dentro de los Workspaces
-model WorkspaceGroup {
+// Grupos dentro de los Proyectos
+model Group {
   id          Int       @id @default(autoincrement())
   name        String
   description String?
-  workspaceId Int
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId   Int
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   members     GroupMember[]
-  tasks       Task[]    // Las tareas ahora pertenecen a grupos
+  tasks       Task[]    // Tareas de grupo
 }
 
 // Miembros de los Grupos
 model GroupMember {
-  id      Int            @id @default(autoincrement())
+  id      Int      @id @default(autoincrement())
   userId  Int
   groupId Int
-  role    String         @default("member") // leader, member
-  joinedAt DateTime      @default(now())
-  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group   WorkspaceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
+  role    String   @default("member")
+  joinedAt DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   @@unique([userId, groupId])
 }
 
@@ -161,11 +159,12 @@ model Task {
   assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
   creatorId   Int
   creator     User      @relation("TaskCreator", fields: [creatorId], references: [id])
-  groupId     Int?      // Ahora pertenece a un grupo
-  group       WorkspaceGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  
-  // Archivos adjuntos
-  attachments TaskAttachment[]
+  groupId     Int?      // Pertenece a un grupo
+  group       Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  parentTaskId Int?     // Si es tarea individual, referencia a la tarea de grupo
+  parentTask   Task?    @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks     Task[]   @relation("Subtasks")
+  attachments  TaskAttachment[]
 }
 
 // Archivos adjuntos de tareas
@@ -206,7 +205,7 @@ model Invitation {
   id          Int      @id @default(autoincrement())
   userId      Int
   companyId   Int
-  workspaceId Int?
+  projectId   Int?
   status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
   role        String   @default("MEMBER")  // ADMIN, MEMBER
   expires     DateTime
@@ -215,5 +214,5 @@ model Invitation {
   // Relaciones
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const form = formidable({
       uploadDir: path.join(process.cwd(), 'public/uploads/profiles'),
       keepExtensions: true,
-      maxFileSize: 5 * 1024 * 1024, // 5MB
+      maxFileSize: 2 * 1024 * 1024, // 2MB
     });
 
     // Crear directorio si no existe

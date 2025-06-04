@@ -187,7 +187,7 @@ export default function GroupManager({ workspaceId, userId, userRole }: GroupMan
     }
   }
 
-  const canManageGroups = userRole === "owner" || userRole === "admin";
+  const canManageGroups = userRole === "owner" || userRole === "admin" || userRole === "ADMIN" || userRole === "OWNER";
 
   if (loading) {
     return (
@@ -200,7 +200,7 @@ export default function GroupManager({ workspaceId, userId, userRole }: GroupMan
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Grupos del Workspace</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Grupos del Proyecto</h2>
         {canManageGroups && (
           <button
             onClick={() => setShowCreateForm(true)}
