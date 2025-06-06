@@ -73,26 +73,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           { dueDate: 'asc' },
           { createdAt: 'desc' }
         ]
-      });
-
-      // Agregar información del grupo manualmente por ahora
+      });      // Agregar información del grupo manualmente por ahora
       const tasksWithGroupInfo = await Promise.all(
         tasks.map(async (task) => {
           if (task.groupId) {
-            const group = await prisma.workspaceGroup.findUnique({
+            const group = await prisma.group.findUnique({
               where: { id: task.groupId },
               include: {
-                workspace: {
+                project: {
                   select: { id: true, name: true }
                 }
               }
-            });
-            return {
+            });            return {
               ...task,
               group: group ? {
                 id: group.id,
                 name: group.name,
-                workspace: group.workspace
+                project: group.project
               } : null
             };
           }
@@ -182,13 +179,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           }
         }
-      });
-
-      // Agregar información del grupo
-      const group = await prisma.workspaceGroup.findUnique({
+      });      // Agregar información del grupo
+      const group = await prisma.group.findUnique({
         where: { id: groupId },
         include: {
-          workspace: {
+          project: {
             select: { id: true, name: true }
           }
         }
@@ -199,7 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         group: group ? {
           id: group.id,
           name: group.name,
-          workspace: group.workspace
+          project: group.project
         } : null
       };
 

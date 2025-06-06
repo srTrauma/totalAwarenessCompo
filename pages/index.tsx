@@ -35,10 +35,9 @@ export default function HomePage() {
               <h2 className="text-2xl font-bold mb-12 text-center">Características</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="flex flex-col items-center p-8 border border-gray-200 rounded-lg bg-white">
-                  <FaBuilding className="w-8 h-8 mb-4 text-black" />
-                  <h3 className="font-semibold mb-2">Espacios de Trabajo</h3>
+                  <FaBuilding className="w-8 h-8 mb-4 text-black" />                  <h3 className="font-semibold mb-2">Proyectos</h3>
                   <p className="text-gray-600 text-center mb-4">Organiza proyectos y equipos de forma simple y eficiente.</p>
-                  <Link href="/workspaces" className="text-black underline hover:text-gray-700">Ver más</Link>
+                  <Link href="/projects" className="text-black underline hover:text-gray-700">Ver más</Link>
                 </div>
                 <div className="flex flex-col items-center p-8 border border-gray-200 rounded-lg bg-white">
                   <FaTasks className="w-8 h-8 mb-4 text-black" />

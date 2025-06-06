@@ -268,17 +268,16 @@ export default function Dashboard() {
             <p className="text-gray-600 mb-6">
               Explora todas las herramientas disponibles para gestionar tu empresa de manera eficiente.
             </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Salas de Trabajo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Proyectos */}
               <div 
-                onClick={() => router.push("/workspaces")}
+                onClick={() => router.push("/projects")}
                 className="p-6 border-2 border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors group"
               >
                 <div className="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-lg mb-4 group-hover:bg-blue-600">
                   <FaProjectDiagram className="text-white text-xl" />
                 </div>
-                <h3 className="font-medium mb-2 text-blue-900">Salas de Trabajo</h3>
+                <h3 className="font-medium mb-2 text-blue-900">Proyectos</h3>
                 <p className="text-sm text-blue-700">
                   Crea espacios colaborativos para tu equipo y organiza proyectos.
                 </p>

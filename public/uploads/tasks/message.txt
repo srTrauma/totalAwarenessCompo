@@ -1,0 +1,21 @@
+| Arma / Objeto    | Skin             | Estado       | Precio (USD) |
+| ---------------- | ---------------- | ------------ | ------------ |
+
+
+| ★ Paracord Knife | Damascus Steel   | Field-Tested | $115.00   |Nomad Damscus 250
+| ★ Hand Wraps     | Duct Tape        | battel scared | $85.00    |
+
+
+| Arma            | Skin            | Estado       | Precio aprox. | Notas                                                    |                                                                                                      |
+| --------------- | --------------- | ------------ | ------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **FAMAS**       | Contrast Spray  | Field-Tested | 0,10 €        | Diseño en blanco y negro con patrón de spray.            |                                                                                                      |
+| **P90**         | Grim            | Field-Tested | 0,14 €        | Diseño con calaveras y tonos oscuros.                    |                                                                                                      |
+| **PP-Bizon**    | Facility Sketch | Field-Tested | 0,04 €        | Patrón de boceto gris sobre base blanca.                 |                                                                                                      |
+| **MP7**         | Cirrus          | Field-Tested | 0,30 €        | Diseño en blanco y azul claro con detalles metálicos.    |                                                                                                      |
+| **MP5-SD**      | Desert Strike   | Factory New  | 0,23 €        | Diseño en tonos arena y detalles oscuros.                |                                                                                                      |
+| **SCAR-20**     | Assault         | Field-Tested | 0,21 €        | Diseño sencillo en tonos grises.                         |                                                                                                      |
+| **XM1014**      | Slipstream      | Factory New  | 0,17 €        | Diseño en tonos grises y azules con patrón aerodinámico. |                                                                                                      |
+| **Sawed-Off**   | Snake Camo      | Factory New  | 0,31 €        | Camuflaje de serpiente en tonos claros.                  |                                                                                                      |
+| **MAG-7**       | Foresight       | Field-Tested | 0,04 €        | Diseño futurista con detalles en blanco.                 |                                                                                                      |
+| **R8 Revolver** | Bone Forged     | Field-Tested | 0,30 €        | Diseño óseo en tonos claros.                             |                                                                                                      |
+| **CZ75-Auto**   | Tacticat        | Field-Tested | 0,30 €        | Diseño con temática de gatos y tonos claros.             | ([TOP CS2 Markets][1], [tradeit.gift][2], 

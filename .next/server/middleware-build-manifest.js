@@ -19,10 +19,10 @@ self.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/CompanySelection.js"
     ],
-    "/Dashboard": [
+    "/Login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/Dashboard.js"
+      "static/chunks/pages/Login.js"
     ],
     "/_app": [
       "static/chunks/webpack.js",
@@ -34,25 +34,10 @@ self.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/about": [
+    "/posts": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/about.js"
-    ],
-    "/companies/manage/members": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/companies/manage/members.js"
-    ],
-    "/contact": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/contact.js"
-    ],
-    "/faq": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/faq.js"
+      "static/chunks/pages/posts.js"
     ],
     "/projects": [
       "static/chunks/webpack.js",

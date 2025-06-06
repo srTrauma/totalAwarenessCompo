@@ -25,10 +25,9 @@ export default function FooterMain() {
                         </div>
                     </div>
                     {/* Links */}
-                    <div>
-                        <h3 className="text-base font-semibold mb-4">Producto</h3>
+                    <div>                        <h3 className="text-base font-semibold mb-4">Producto</h3>
                         <ul className="space-y-2 text-sm">
-                            <li><Link href="/workspaces" className="hover:underline hover:text-blue-600">Espacios de Trabajo</Link></li>
+                            <li><Link href="/projects" className="hover:underline hover:text-blue-600">Proyectos</Link></li>
                             <li><Link href="/tasks" className="hover:underline hover:text-blue-600">Gestión de Tareas</Link></li>
                             <li><Link href="/companies/explore" className="hover:underline hover:text-blue-600">Empresas</Link></li>
                             <li><Link href="/Dashboard" className="hover:underline hover:text-blue-600">Analytics</Link></li>
