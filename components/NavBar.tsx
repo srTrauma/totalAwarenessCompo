@@ -30,12 +30,23 @@ function NavBar() {
     }
   }, []);
   // --- FIN: Script de Microsoft Clarity ---
+
   useEffect(() => {
     setMounted(true);
     
     if (typeof window !== "undefined") {
-      // No usar sessionStorage para la sesión del usuario
-      // La autenticación se manejará por otras vías si es necesario
+      // Verificar si hay un usuario logueado en sessionStorage
+      const storedUser = sessionStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsLoggedIn(true);
+        } catch (error) {
+          console.error('Error parsing stored user:', error);
+          sessionStorage.removeItem("user");
+        }
+      }
       
       const handleScroll = () => {
         setScrolled(window.scrollY > 20);
@@ -48,7 +59,8 @@ function NavBar() {
 
   const handleAuth = () => {
     if (typeof window !== "undefined") {
-      if (isLoggedIn) {        sessionStorage.removeItem("user");
+      if (isLoggedIn) {
+        sessionStorage.removeItem("user");
         sessionStorage.removeItem("selectedCompany");
         setIsLoggedIn(false);
         setUser(null);
@@ -126,7 +138,8 @@ function NavBar() {
                 </Link>
                 <Link href="/contact" className="text-sm font-medium text-neutral-700 hover:text-blue-800 transition-colors">
                   Contacto
-                </Link>                {isLoggedIn && (
+                </Link>
+                {isLoggedIn && (
                   <>
                     <Link href="/CompanySelection" className="text-sm font-medium text-blue-700 hover:text-blue-900 transition-colors">
                       Gestión de Empresas
@@ -148,7 +161,8 @@ function NavBar() {
                 <div className="flex items-center space-x-4">
                   {/* Notificaciones */}
                   <Notifications userId={user.id} />
-                    {/* Dropdown de perfil */}
+                  
+                  {/* Dropdown de perfil */}
                   <div className="relative">
                     <button
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -240,7 +254,7 @@ function NavBar() {
                 >
                   Contacto
                 </Link>
-                  {isLoggedIn && (
+                {isLoggedIn && (
                   <>
                     <Link href="/CompanySelection" 
                       className="block py-3 text-blue-700 font-medium hover:text-blue-900 transition-colors border-b border-gray-100"
