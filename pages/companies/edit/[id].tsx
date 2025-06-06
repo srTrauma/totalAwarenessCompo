@@ -30,7 +30,7 @@ export default function EditCompany() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
@@ -132,7 +132,7 @@ export default function EditCompany() {
 
       if (response.ok) {
         alert("Empresa eliminada correctamente");
-        localStorage.removeItem("selectedCompany");
+        sessionStorage.removeItem("selectedCompany");
         router.push("/CompanySelection");
       } else {
         const errorData = await response.json();

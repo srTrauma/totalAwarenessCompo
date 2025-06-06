@@ -30,18 +30,13 @@ function NavBar() {
     }
   }, []);
   // --- FIN: Script de Microsoft Clarity ---
-
   useEffect(() => {
     setMounted(true);
     
     if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsLoggedIn(true);
-      }
-
+      // No usar sessionStorage para la sesión del usuario
+      // La autenticación se manejará por otras vías si es necesario
+      
       const handleScroll = () => {
         setScrolled(window.scrollY > 20);
       };
@@ -53,9 +48,8 @@ function NavBar() {
 
   const handleAuth = () => {
     if (typeof window !== "undefined") {
-      if (isLoggedIn) {
-        localStorage.removeItem("user");
-        localStorage.removeItem("selectedCompany");
+      if (isLoggedIn) {        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("selectedCompany");
         setIsLoggedIn(false);
         setUser(null);
         setShowProfileDropdown(false);

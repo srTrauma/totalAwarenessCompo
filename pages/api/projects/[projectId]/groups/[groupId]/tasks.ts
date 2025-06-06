@@ -94,38 +94,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
             resolve(undefined);
           });
+        });      } else {
+        // JSON plano - parsear manualmente ya que bodyParser está deshabilitado
+        let body = '';
+        req.setEncoding('utf8');
+        
+        await new Promise((resolve, reject) => {
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          
+          req.on('end', () => {
+            try {
+              const parsedBody = JSON.parse(body || '{}');
+              console.log('Request body:', parsedBody);
+              console.log('Content-Type:', req.headers['content-type']);
+              
+              title = parsedBody.title;
+              description = parsedBody.description;
+              priority = parsedBody.priority;
+              status = parsedBody.status;
+              dueDate = parsedBody.dueDate;
+              assigneeId = parsedBody.assigneeId;
+              
+              resolve(undefined);
+            } catch (error) {
+              reject(new Error('Invalid JSON'));
+            }
+          });
+          
+          req.on('error', reject);
         });
-      } else {
-        // JSON plano
-        title = req.body.title;
-        description = req.body.description;
-        priority = req.body.priority;
-        status = req.body.status;
-        dueDate = req.body.dueDate;
-        assigneeId = req.body.assigneeId;
       }
+      
+      // Log de debug para ver qué valores tenemos
+      console.log('Parsed values:', { title, description, priority, status, dueDate, assigneeId });
       // Verificar que el usuario tiene acceso al grupo
       const groupMember = await prisma.groupMember.findFirst({
         where: { groupId: groupIdNum, userId: userId }
       });
       if (!groupMember) {
         return res.status(403).json({ message: 'Sin acceso a este grupo' });
-      }
-      if (!title || title.trim().length === 0) {
+      }      // Validar y limpiar los datos
+      if (!title || typeof title !== 'string' || title.trim().length === 0) {
         return res.status(400).json({ message: 'El título es requerido' });
       }
+      
       const validPriorities = ['low', 'medium', 'high', 'urgent'];
       const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+      
       if (priority && !validPriorities.includes(priority)) {
         return res.status(400).json({ message: 'Prioridad inválida' });
       }
       if (status && !validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Estado inválido' });
       }
+      
       // No permitir crear tareas con estado 'cancelled'
       if (status === 'cancelled') {
         status = 'pending';
       }
+      
       if (assigneeId && assigneeId != userId) {
         const assigneeAccess = await prisma.groupMember.findFirst({
           where: { groupId: groupIdNum, userId: Number(assigneeId) }
@@ -134,6 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ message: 'El asignado no tiene acceso a este grupo' });
         }
       }
+      
       const task = await prisma.task.create({
         data: {
           title: title.trim(),

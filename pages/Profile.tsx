@@ -31,7 +31,7 @@ export default function Profile() {
   const [faqProfile, setFaqProfile] = useState("");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (!storedUser) {
       router.push("/Login");
       return;
@@ -103,9 +103,8 @@ export default function Profile() {
       if (response.ok) {
         const updatedUser = await response.json();
         setUser(updatedUser);
-        
-        // Actualizar localStorage
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+          // Actualizar sessionStorage
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
         
         setSuccess("Perfil actualizado correctamente");
       } else {

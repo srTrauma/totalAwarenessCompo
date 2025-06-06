@@ -32,7 +32,7 @@ export default function CompanyDetails() {
   const [joinButtonDisabled, setJoinButtonDisabled] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
@@ -147,9 +147,8 @@ export default function CompanyDetails() {
     router.back();
   }
 
-  function enterCompany() {
-    // Guardar la empresa seleccionada en el localStorage para usar en dashboard
-    localStorage.setItem("selectedCompany", String(company?.id));
+  function enterCompany() {    // Guardar la empresa seleccionada en el sessionStorage para usar en dashboard
+    sessionStorage.setItem("selectedCompany", String(company?.id));
     router.push("/Dashboard"); // O donde esté tu dashboard
   }
 

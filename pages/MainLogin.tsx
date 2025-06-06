@@ -9,7 +9,7 @@ export default function MainLogin() {
   const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
@@ -26,7 +26,7 @@ export default function MainLogin() {
       {user?.id && <p>Tu ID es {user.id}</p>}
       
       <div onClick={() => {
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
         router.push("/Login");
       }}>
         <Button Text="Cerrar Sesión" />

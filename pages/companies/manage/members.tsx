@@ -38,9 +38,8 @@ export default function ManageMembers() {
   const [error, setError] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState<Role | null>(null);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const selectedCompany = localStorage.getItem("selectedCompany");
+  useEffect(() => {    const storedUser = sessionStorage.getItem("user");
+    const selectedCompany = sessionStorage.getItem("selectedCompany");
     
     if (!storedUser || !selectedCompany) {
       router.push("/CompanySelection");
@@ -64,7 +63,7 @@ export default function ManageMembers() {
     try {
       const response = await fetch(`/api/companies/detail?companyId=${companyId}`, {
         headers: {
-          userid: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!).id : ""
+          userid: sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")!).id : ""
         }
       });
       

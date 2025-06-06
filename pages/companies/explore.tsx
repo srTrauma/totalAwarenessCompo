@@ -26,7 +26,7 @@ export default function ExploreCompanies() {
   const [filter, setFilter] = useState<"all" | "public" | "private">("all");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);

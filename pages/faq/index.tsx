@@ -36,7 +36,7 @@ const FAQPage = () => {
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (!storedUser) {
       router.push("/Login");
       return;

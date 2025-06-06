@@ -15,9 +15,8 @@ export default function PostsPage() {
   const [loading, setLoading] = useState(true);
   const [noCompanies, setNoCompanies] = useState(false);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const selectedCompany = localStorage.getItem("selectedCompany");
+  useEffect(() => {    const storedUser = sessionStorage.getItem("user");
+    const selectedCompany = sessionStorage.getItem("selectedCompany");
     
     if (!storedUser) {
       router.push("/Login");
@@ -39,7 +38,7 @@ export default function PostsPage() {
           if (Array.isArray(data) && data.length > 0) {
             // Buscar id=0, si no existe, usar la primera
             const defaultCompany = data.find((c: any) => c.id === 0) || data[0];
-            localStorage.setItem("selectedCompany", String(defaultCompany.id));
+            sessionStorage.setItem("selectedCompany", String(defaultCompany.id));
             setSelectedCompanyId(defaultCompany.id);
             fetchCompanyDetails(defaultCompany.id, parsedUser.id);
           } else {
@@ -82,9 +81,8 @@ export default function PostsPage() {
     
     try {
       setLoading(true);
-      
-      // Actualizar localStorage con la nueva empresa seleccionada
-      localStorage.setItem("selectedCompany", newCompanyId.toString());
+        // Actualizar sessionStorage con la nueva empresa seleccionada
+      sessionStorage.setItem("selectedCompany", newCompanyId.toString());
       setSelectedCompanyId(newCompanyId);
       
       // Obtener detalles de la nueva empresa

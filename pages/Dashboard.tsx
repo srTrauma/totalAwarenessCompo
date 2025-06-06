@@ -30,11 +30,10 @@ export default function Dashboard() {
   const [company, setCompany] = useState<CompanyDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   useEffect(() => {
     // Comprobar si el usuario está autenticado
-    const storedUser = localStorage.getItem("user");
-    const selectedCompany = localStorage.getItem("selectedCompany");
+    const storedUser = sessionStorage.getItem("user");
+    const selectedCompany = sessionStorage.getItem("selectedCompany");
     
     if (!storedUser || !selectedCompany) {
       router.push("/Login");
@@ -50,7 +49,7 @@ export default function Dashboard() {
       setLoading(true);
       const response = await fetch(`/api/companies/detail?companyId=${companyId}`, {
         headers: {
-          userid: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!).id : ""
+          userid: sessionStorage.getItem("user") ? JSON.parse(sessionStorage.getItem("user")!).id : ""
         }
       });
       
@@ -71,14 +70,13 @@ export default function Dashboard() {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("user");
-    localStorage.removeItem("selectedCompany");
+  function handleLogout() {    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("selectedCompany");
     router.push("/Login");
   }
 
   function handleSwitchCompany() {
-    localStorage.removeItem("selectedCompany");
+    sessionStorage.removeItem("selectedCompany");
     router.push("/CompanySelection");
   }
 

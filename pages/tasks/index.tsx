@@ -43,9 +43,8 @@ export default function TasksPage() {
   // Estado para controlar el modal de creación de tarea
   const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const selectedCompany = localStorage.getItem("selectedCompany");
+  useEffect(() => {    const storedUser = sessionStorage.getItem("user");
+    const selectedCompany = sessionStorage.getItem("selectedCompany");
     
     if (!storedUser) {
       router.push("/Login");
@@ -67,7 +66,7 @@ export default function TasksPage() {
           if (Array.isArray(data) && data.length > 0) {
             // Buscar id=0, si no existe, usar la primera
             const defaultCompany = data.find((c: any) => c.id === 0) || data[0];
-            localStorage.setItem("selectedCompany", String(defaultCompany.id));
+            sessionStorage.setItem("selectedCompany", String(defaultCompany.id));
             setSelectedCompanyId(defaultCompany.id);
             fetchCompanyDetails(defaultCompany.id, parsedUser.id);
           } else {
@@ -117,9 +116,8 @@ export default function TasksPage() {
       setSelectedGroup(null);
       setProjects([]);
       setGroups([]);
-      
-      // Actualizar localStorage
-      localStorage.setItem("selectedCompany", newCompanyId.toString());
+        // Actualizar sessionStorage
+      sessionStorage.setItem("selectedCompany", newCompanyId.toString());
       setSelectedCompanyId(newCompanyId);
       
       // Obtener detalles de la nueva empresa

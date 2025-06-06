@@ -6,9 +6,8 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    // Obtener el usuario del localStorage al cargar el componente
-    const storedUser = localStorage.getItem('user');
+  useEffect(() => {    // Obtener el usuario del sessionStorage al cargar el componente
+    const storedUser = sessionStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
@@ -17,7 +16,7 @@ export default function Navbar() {
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     router.push('/login');
   };
 

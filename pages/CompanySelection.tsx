@@ -29,7 +29,7 @@ export default function CompanySelection() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
@@ -105,14 +105,13 @@ export default function CompanySelection() {
       alert("Tu solicitud está pendiente de aprobación.");
       return;
     }
-    
-    // Guardar la empresa seleccionada en localStorage
-    localStorage.setItem("selectedCompany", String(companyId));
+      // Guardar la empresa seleccionada en sessionStorage
+    sessionStorage.setItem("selectedCompany", String(companyId));
     router.push("/Dashboard"); // Redirigir al dashboard de la empresa
   }
 
   function handleLogout() {
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     router.push("/Login");
   }
 

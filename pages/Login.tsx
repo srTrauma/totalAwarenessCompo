@@ -98,7 +98,7 @@ export default function Login() {
       
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem("user", JSON.stringify(data.user));
         setSuccess("¡Inicio de sesión exitoso!");
         router.push("/CompanySelection");
       } else {
@@ -156,7 +156,7 @@ export default function Login() {
 
   useEffect(() => {
     // Si el usuario ya está logueado, redirigir a la página de selección de empresa
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       router.push("/CompanySelection");
     }

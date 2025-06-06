@@ -31,9 +31,8 @@ export default function ProjectsPage() {
   const [addingMember, setAddingMember] = useState<{ [groupId: number]: boolean }>({});
   const [removingMember, setRemovingMember] = useState<{ [groupId: number]: number | null }>({});
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const selectedCompany = localStorage.getItem("selectedCompany");
+  useEffect(() => {    const storedUser = sessionStorage.getItem("user");
+    const selectedCompany = sessionStorage.getItem("selectedCompany");
     if (!storedUser) {
       router.push("/Login");
       return;
@@ -49,7 +48,7 @@ export default function ProjectsPage() {
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
             const defaultCompany = data.find((c: any) => c.id === 0) || data[0];
-            localStorage.setItem("selectedCompany", String(defaultCompany.id));
+            sessionStorage.setItem("selectedCompany", String(defaultCompany.id));
             setSelectedCompanyId(defaultCompany.id);
             fetchCompanyDetails(defaultCompany.id, parsedUser.id);
           } else {
@@ -113,7 +112,7 @@ export default function ProjectsPage() {
     if (!user) return;
     try {
       setLoading(true);
-      localStorage.setItem("selectedCompany", String(companyId));
+      sessionStorage.setItem("selectedCompany", String(companyId));
       setSelectedCompanyId(companyId);
       await fetchCompanyDetails(companyId, user.id);
     } catch (error) {
