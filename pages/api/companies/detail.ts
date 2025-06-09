@@ -77,12 +77,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         membershipStatus = userMembership.approved ? 'approved' : 'pending';
       }
     }
-    
-    // Devolver información detallada de la empresa
+      // Devolver información detallada de la empresa
     res.status(200).json({
       id: company.id,
       name: company.name,
       description: company.description,
+      logoUrl: company.logoUrl,
       public: company.public,
       owner: company.owner,
       memberCount: company._count.members,

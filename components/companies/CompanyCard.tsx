@@ -6,6 +6,7 @@ interface CompanyCardProps {
     id: number;
     name: string;
     description: string | null;
+    logoUrl?: string | null;
     ownerName?: string;
     memberCount?: number;
     createdAt: string;
@@ -35,13 +36,26 @@ export default function CompanyCard({ company, onJoin, showJoinButton = false }:
     router.push(`/companies/${company.id}`);
   };
 
-  return (
-    <div className="bg-white shadow overflow-hidden rounded-lg">
+  return (    <div className="bg-white shadow overflow-hidden rounded-lg">
       <div className="p-5">
-        <div className="flex justify-between">
-          <h3 className="text-lg font-medium text-gray-900 truncate">{company.name}</h3>
+        <div className="flex justify-between items-start">          <div className="flex items-center flex-1 min-w-0">
+            {company.logoUrl ? (
+              <img 
+                src={company.logoUrl} 
+                alt={`${company.name} logo`}
+                className="w-12 h-12 rounded-full object-cover mr-3 flex-shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                <span className="text-blue-600 text-lg font-semibold">
+                  {company.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <h3 className="text-lg font-medium text-gray-900 truncate">{company.name}</h3>
+          </div>
           {company.public !== undefined && (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
               company.public ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
             }`}>
               {company.public ? 'Pública' : 'Privada'}

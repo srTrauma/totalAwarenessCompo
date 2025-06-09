@@ -63,26 +63,25 @@ export default function CompanySelector({
       </div>
     );
   }
-
   return (
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="flex items-center w-full px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
       >
-        <FaBuilding className="text-gray-400 mr-3" />
+        <FaBuilding className="text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-gray-900 truncate">
             {selectedCompany?.name || 'Seleccionar empresa'}
           </div>
           {selectedCompany?.description && (
-            <div className="text-xs text-gray-500 truncate">
+            <div className="text-xs text-gray-500 truncate hidden sm:block">
               {selectedCompany.description}
             </div>
           )}
         </div>
         <FaChevronDown 
-          className={`ml-2 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`ml-2 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -90,12 +89,12 @@ export default function CompanySelector({
         <>
           {/* Overlay para cerrar cuando se hace clic fuera */}
           <div 
-            className="fixed inset-0 z-10" 
+            className="fixed inset-0 z-30" 
             onClick={() => setIsOpen(false)}
           />
           
-          {/* Dropdown */}
-          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          {/* Dropdown con mejor posicionamiento responsive */}
+          <div className="absolute z-40 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
             {ownedCompanies.map((company) => (
               <button
                 key={company.id}
@@ -103,18 +102,18 @@ export default function CompanySelector({
                   onCompanyChange(company.id);
                   setIsOpen(false);
                 }}
-                className={`w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 ${
+                className={`w-full px-3 sm:px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition-colors ${
                   company.id === selectedCompanyId ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                 }`}
               >
                 <div className="flex items-center">
-                  <FaBuilding className="text-gray-400 mr-3 flex-shrink-0" />
+                  <FaBuilding className="text-gray-400 mr-2 sm:mr-3 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-gray-900 truncate">
                       {company.name}
                     </div>
                     {company.description && (
-                      <div className="text-xs text-gray-500 truncate">
+                      <div className="text-xs text-gray-500 truncate hidden sm:block">
                         {company.description}
                       </div>
                     )}

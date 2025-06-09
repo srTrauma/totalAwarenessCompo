@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import PublicPostsFeed from "@/components/PublicPostsFeed";
+import CompanyImageUpload from "@/components/companies/CompanyImageUpload";
 import { FaBuilding, FaPlus, FaSearch, FaLock, FaGlobe, FaUserShield } from "react-icons/fa";
 
 
@@ -10,6 +11,7 @@ interface Company {
   id: number;
   name: string;
   description: string | null;
+  logoUrl: string | null;
   public: boolean;
   isOwner: boolean;
   role: string;
@@ -19,11 +21,11 @@ interface Company {
 
 export default function CompanySelection() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);  const [companies, setCompanies] = useState<Company[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newCompanyDescription, setNewCompanyDescription] = useState("");
+  const [newCompanyLogo, setNewCompanyLogo] = useState<string | null>(null);
   const [isPublicCompany, setIsPublicCompany] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,22 +72,22 @@ export default function CompanySelection() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           userId: user?.id,
           name: newCompanyName.trim(),
           description: newCompanyDescription.trim() || null,
+          logoUrl: newCompanyLogo,
           isPublic: isPublicCompany
         }),
       });
 
       if (response.ok) {
-        const newCompany = await response.json();
-        // Recargar la lista de empresas
+        const newCompany = await response.json();        // Recargar la lista de empresas
         fetchCompanies(user!.id);
         setIsCreating(false);
         setNewCompanyName("");
         setNewCompanyDescription("");
+        setNewCompanyLogo(null);
         setIsPublicCompany(false);
         setError("");
       } else {
@@ -168,13 +170,20 @@ export default function CompanySelection() {
                         company.approved ? 'cursor-pointer' : 'opacity-75'
                       }`}
                       onClick={() => selectCompany(company.id, company.approved)}
-                    >
-                      <div className="p-5">
+                    >                      <div className="p-5">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center">
-                            <div className="bg-blue-100 rounded-full p-2 mr-3">
-                              <FaBuilding className="text-blue-600" />
-                            </div>
+                            {company.logoUrl ? (
+                              <img 
+                                src={company.logoUrl} 
+                                alt={`${company.name} logo`}
+                                className="w-10 h-10 rounded-full object-cover mr-3"
+                              />
+                            ) : (
+                              <div className="bg-blue-100 rounded-full p-2 mr-3">
+                                <FaBuilding className="text-blue-600" />
+                              </div>
+                            )}
                             <h3 className="font-semibold text-lg">{company.name}</h3>
                           </div>
                           <div>
@@ -256,8 +265,7 @@ export default function CompanySelection() {
                       placeholder="Ingresa el nombre de la empresa"
                     />
                   </div>
-                  
-                  <div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Descripción
                     </label>
@@ -267,6 +275,14 @@ export default function CompanySelection() {
                       className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Descripción opcional"
                       rows={3}
+                    />
+                  </div>                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Logo de la empresa
+                    </label>
+                    <CompanyImageUpload
+                      currentImage={newCompanyLogo || undefined}
+                      onImageChange={(url: string | null) => setNewCompanyLogo(url)}
                     />
                   </div>
                   

@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
+import CompanyImageUpload from "@/components/companies/CompanyImageUpload";
 import { FaArrowLeft, FaBuilding, FaSave, FaTrash } from "react-icons/fa";
 
 interface CompanyDetails {
   id: number;
   name: string;
   description: string | null;
+  logoUrl: string | null;
   public: boolean;
   owner: {
     id: number;
@@ -18,11 +20,11 @@ interface CompanyDetails {
 
 export default function EditCompany() {
   const router = useRouter();
-  const { id } = router.query;
-  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
+  const { id } = router.query;  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null);
   const [company, setCompany] = useState<CompanyDetails | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,13 +55,12 @@ export default function EditCompany() {
         headers: {
           userid: user!.id.toString()
         }
-      });
-
-      if (response.ok) {
+      });      if (response.ok) {
         const data = await response.json();
         setCompany(data);
         setName(data.name);
         setDescription(data.description || "");
+        setLogoUrl(data.logoUrl);
         setIsPublic(data.public);
       } else {
         const errorData = await response.json();
@@ -92,11 +93,11 @@ export default function EditCompany() {
         headers: {
           "Content-Type": "application/json",
           userid: user!.id.toString()
-        },
-        body: JSON.stringify({
+        },        body: JSON.stringify({
           companyId: Number(id),
           name: name.trim(),
           description: description.trim() || null,
+          logoUrl: logoUrl,
           public: isPublic
         }),
       });
@@ -255,8 +256,7 @@ export default function EditCompany() {
                   placeholder="Ingresa el nombre de la empresa"
                 />
               </div>
-              
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descripción
                 </label>
@@ -266,6 +266,17 @@ export default function EditCompany() {
                   className="w-full p-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Descripción opcional"
                   rows={4}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Logo de la empresa
+                </label>
+                <CompanyImageUpload
+                  currentImage={logoUrl || undefined}
+                  onImageChange={(url: string | null) => setLogoUrl(url)}
+                  companyId={Number(id)}
                 />
               </div>
               

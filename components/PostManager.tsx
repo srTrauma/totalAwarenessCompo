@@ -430,7 +430,6 @@ const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, 
 };
 
 const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }) => {
-  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -445,31 +444,6 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
     fetchPosts();
     fetchCompanies();
   }, []);
-
-  // Nuevo useEffect para manejar el parámetro editPost de la URL
-  useEffect(() => {
-    if (router.query.editPost) {
-      const postId = parseInt(router.query.editPost as string);
-      if (postId && posts.length > 0) {
-        const postToEdit = posts.find(p => p.id === postId);
-        if (postToEdit) {
-          // Verificar si el usuario puede editar este post
-          if (postToEdit.author.id === userId) {
-            setEditingPost(postToEdit);
-            setShowForm(true);
-            // Limpiar el parámetro de la URL sin recargar la página
-            router.replace('/posts', undefined, { shallow: true });
-          } else {
-            toast.error('No tienes permiso para editar este post');
-            router.replace('/posts', undefined, { shallow: true });
-          }
-        } else {
-          toast.error('Post no encontrado');
-          router.replace('/posts', undefined, { shallow: true });
-        }
-      }
-    }
-  }, [router.query.editPost, posts, userId]);
   const fetchPosts = async () => {
     try {
       const response = await fetch('/api/posts', {

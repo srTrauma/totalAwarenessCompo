@@ -29,13 +29,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         { public: 'desc' }, // Primero las públicas
         { createdAt: 'desc' }, // Más recientes primero
       ]
-    });
-
-    // Formatear la respuesta para no exponer datos innecesarios
+    });    // Formatear la respuesta para no exponer datos innecesarios
     const formattedCompanies = companies.map(company => ({
       id: company.id,
       name: company.name,
       description: company.description,
+      logoUrl: company.logoUrl,
       ownerName: company.owner.name,
       memberCount: company._count.members,
       createdAt: company.createdAt,

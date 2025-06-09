@@ -33,6 +33,7 @@ model Company {
   id          Int           @id @default(autoincrement())
   name        String
   description String?
+  logoUrl     String?       // URL de la imagen/logo de la empresa
   public      Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

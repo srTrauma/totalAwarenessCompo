@@ -8,9 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'PUT') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
-
   try {
-    const { companyId, name, description, public: isPublic } = req.body;
+    const { companyId, name, description, public: isPublic, logoUrl } = req.body;
     const userId = req.headers.userid as string;
 
     if (!companyId) {
@@ -65,14 +64,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (existingCompany) {
         return res.status(400).json({ message: 'Ya existe una empresa con ese nombre' });
       }
-    }
-
-    // Actualizar la empresa
+    }    // Actualizar la empresa
     const updatedCompany = await prisma.company.update({
       where: { id: companyId },
       data: {
         name: name || company.name,
         description: description !== undefined ? description : company.description,
+        logoUrl: logoUrl !== undefined ? logoUrl : company.logoUrl,
         public: isPublic !== undefined ? isPublic : company.public,
       }
     });

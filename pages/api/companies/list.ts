@@ -25,12 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         company: true,
         role: true,
       }
-    });
-
-    const companies = memberships.map(membership => ({
+    });    const companies = memberships.map(membership => ({
       id: membership.company.id,
       name: membership.company.name,
       description: membership.company.description,
+      logoUrl: membership.company.logoUrl,
       public: membership.company.public,
       isOwner: membership.company.ownerId === Number(userId),
       role: membership.role.name,

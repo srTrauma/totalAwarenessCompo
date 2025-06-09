@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import PostManager from "@/components/PostManager";
-import CompanySelector from "@/components/CompanySelector";
 import { FaArrowLeft } from "react-icons/fa";
 
 
@@ -97,9 +96,8 @@ export default function PostsPage() {
         <Head>
           <title>Cargando... | Total Awareness</title>
         </Head>
-        <NavBar />
-        <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <NavBar />        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </>
     );
@@ -111,12 +109,16 @@ export default function PostsPage() {
         <Head>
           <title>Sin empresas | Total Awareness</title>
         </Head>
-        <NavBar />
-        <div className="flex flex-col items-center justify-center h-screen">
-          <div className="bg-white p-8 rounded-lg shadow-md text-center">
-            <h2 className="text-2xl font-semibold mb-4">No tienes empresas disponibles</h2>
-            <p className="mb-4 text-gray-600">Crea una empresa o únete a una existente para acceder a los posts de empresa.</p>
-            <button onClick={() => router.push('/CompanySelection')} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Ir a selección de empresa</button>
+        <NavBar />        <div className="flex flex-col items-center justify-center min-h-screen px-4">
+          <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md text-center max-w-md w-full">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-4">No tienes empresas disponibles</h2>
+            <p className="mb-4 text-gray-600 text-sm sm:text-base">Crea una empresa o únete a una existente para acceder a los posts de empresa.</p>
+            <button 
+              onClick={() => router.push('/CompanySelection')} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto"
+            >
+              Ir a selección de empresa
+            </button>
           </div>
         </div>
       </>
@@ -133,31 +135,21 @@ export default function PostsPage() {
         <title>Posts de Empresa | Total Awareness</title>
         <meta name="description" content="Crea y gestiona publicaciones para tu empresa" />
       </Head>
-      
-      <NavBar />
-        <div className="bg-gray-50 min-h-screen py-8">
+        <NavBar />
+        <div className="bg-gray-50 min-h-screen py-4 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <button
               onClick={() => router.back()}
-              className="flex items-center text-blue-600 mb-4 hover:underline"
+              className="flex items-center text-blue-600 mb-4 hover:underline transition-colors"
             >
               <FaArrowLeft className="mr-2" /> Volver
             </button>
-            
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-3xl font-bold text-gray-900">Posts de Empresa - {company.name}</h1>
-                {user && (
-                  <CompanySelector
-                    userId={user.id}
-                    selectedCompanyId={selectedCompanyId}
-                    onCompanyChange={handleCompanyChange}
-                    className="w-80"
-                  />
-                )}
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="mb-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Posts de {company.name}</h1>
               </div>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 Comparte noticias, ofertas de trabajo, eventos y actualizaciones importantes.
                 Mantén a tu audiencia informada y comprometida con contenido relevante.
               </p>
