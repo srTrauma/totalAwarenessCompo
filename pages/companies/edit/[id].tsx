@@ -79,7 +79,6 @@ export default function EditCompany() {
       setLoading(false);
     }
   }
-
   async function handleSave() {
     if (!name.trim()) {
       setError("El nombre de la empresa es obligatorio");
@@ -88,18 +87,25 @@ export default function EditCompany() {
 
     try {
       setSaving(true);
-      const response = await fetch("/api/companies/update", {
+      
+      // Preparar datos para enviar
+      const updateData: any = {
+        companyId: Number(id),
+        name: name.trim(),
+        description: description.trim() || null,
+        logoUrl: logoUrl,
+      };
+      
+      // Solo incluir el campo 'public' si el usuario es propietario
+      if (company?.isOwner) {
+        updateData.public = isPublic;
+      }
+        const response = await fetch("/api/companies/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           userid: user!.id.toString()
-        },        body: JSON.stringify({
-          companyId: Number(id),
-          name: name.trim(),
-          description: description.trim() || null,
-          logoUrl: logoUrl,
-          public: isPublic
-        }),
+        },        body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
