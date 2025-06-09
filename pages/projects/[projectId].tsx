@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import GroupManager from "@/components/GroupManager";
-import { FaArrowLeft, FaUsers, FaPlus, FaCog, FaLayerGroup, FaUserPlus, FaTrash } from "react-icons/fa";
+import { FaArrowLeft, FaUsers, FaPlus, FaCog, FaLayerGroup, FaUserPlus, FaTrash, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 
 interface Project {
   id: number;
@@ -47,11 +47,14 @@ export default function ProjectDetailsPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("MEMBER");
+  const [inviteEmail, setInviteEmail] = useState("");  const [inviteRole, setInviteRole] = useState("MEMBER");
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "members" | "groups">("overview");
   const [isCompanyUser, setIsCompanyUser] = useState<boolean | null>(null);
+  // --- Estados para edición del nombre del proyecto ---
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState("");
+  const [savingName, setSavingName] = useState(false);
   // --- NUEVO: CRUD de miembros para admins ---
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<any[]>([]);
@@ -144,7 +147,6 @@ export default function ProjectDetailsPage() {
       setSubmitting(false);
     }
   };
-
   const handleRemoveMember = async (membershipId: number) => {
     if (!project || !confirm('¿Estás seguro de que quieres remover a este miembro?')) return;
     try {
@@ -163,6 +165,54 @@ export default function ProjectDetailsPage() {
     } catch (error) {
       console.error('Error removing member:', error);
       alert('Error al conectar con el servidor');
+    }
+  };
+
+  // Funciones para editar el nombre del proyecto
+  const handleStartEditingName = () => {
+    if (!project) return;
+    setEditingName(project.name);
+    setIsEditingName(true);
+  };
+
+  const handleCancelEditingName = () => {
+    setIsEditingName(false);
+    setEditingName("");
+  };
+
+  const handleSaveProjectName = async () => {
+    if (!project || !user || !editingName.trim()) return;
+    
+    if (editingName.trim() === project.name) {
+      handleCancelEditingName();
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'userid': user.id.toString()
+        },
+        body: JSON.stringify({ name: editingName.trim() })
+      });
+
+      if (response.ok) {
+        const updatedProject = await response.json();
+        setProject(prev => prev ? { ...prev, name: updatedProject.name } : null);
+        setIsEditingName(false);
+        setEditingName("");
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al actualizar el nombre del proyecto');
+      }
+    } catch (error) {
+      console.error('Error updating project name:', error);
+      alert('Error al conectar con el servidor');
+    } finally {
+      setSavingName(false);
     }
   };
 
@@ -305,11 +355,62 @@ export default function ProjectDetailsPage() {
               className="flex items-center text-blue-600 mb-4 hover:underline"
             >
               <FaArrowLeft className="mr-2" /> Volver
-            </button>
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            </button>            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+                <div className="flex-1">
+                  {isEditingName ? (
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveProjectName();
+                          } else if (e.key === 'Escape') {
+                            handleCancelEditingName();
+                          }
+                        }}
+                        className="text-3xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-500 focus:outline-none focus:border-blue-600 w-full max-w-md"
+                        placeholder="Nombre del proyecto"
+                        disabled={savingName}
+                        autoFocus
+                      />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleSaveProjectName}
+                          disabled={savingName || !editingName.trim()}
+                          className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {savingName ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                          ) : (
+                            <FaCheck />
+                          )}
+                        </button>
+                        <button
+                          onClick={handleCancelEditingName}
+                          disabled={savingName}
+                          className="flex items-center px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-3">
+                      <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+                      {project.canManage && (
+                        <button
+                          onClick={handleStartEditingName}
+                          className="flex items-center px-2 py-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          title="Editar nombre del proyecto"
+                        >
+                          <FaEdit className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <p className="text-gray-600 mt-1">{project.company.name}</p>
                 </div>
                 {project.canManage && (

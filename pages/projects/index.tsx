@@ -20,9 +20,14 @@ export default function ProjectsPage() {
   const [creatingProject, setCreatingProject] = useState(false);
   const [selectedProjectForGroup, setSelectedProjectForGroup] = useState<any>(null);
   const [showGroupForm, setShowGroupForm] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupDescription, setNewGroupDescription] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");  const [newGroupDescription, setNewGroupDescription] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
+
+  // Estado para edición de proyectos
+  const [editingProject, setEditingProject] = useState<{ id: number; name: string; description: string } | null>(null);
+  const [editProjectName, setEditProjectName] = useState("");
+  const [editProjectDescription, setEditProjectDescription] = useState("");
+  const [updatingProject, setUpdatingProject] = useState(false);
 
   // Estado para miembros y tareas de grupos
   const [groupMembers, setGroupMembers] = useState<{ [groupId: number]: any[] }>({});
@@ -177,10 +182,53 @@ export default function ProjectsPage() {
         alert(error.message || "Error al crear grupo");
       }
     } catch (err) {
-      alert("Error al crear grupo");
-    } finally {
+      alert("Error al crear grupo");    } finally {
       setCreatingGroup(false);
     }
+  };
+
+  // Función para actualizar proyecto
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingProject || !editProjectName.trim()) return;
+    
+    setUpdatingProject(true);
+    try {
+      const res = await fetch("/api/projects", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: editingProject.id,
+          name: editProjectName,
+          description: editProjectDescription,
+          userId: user.id,
+        }),
+      });
+      
+      if (res.ok) {
+        setEditingProject(null);
+        setEditProjectName("");
+        setEditProjectDescription("");
+        if (typeof selectedCompanyId === "number") {
+          fetchProjects(selectedCompanyId);
+        }
+        alert("Proyecto actualizado exitosamente");
+      } else {
+        const error = await res.json();
+        alert(error.message || "Error al actualizar proyecto");
+      }
+    } catch (err) {
+      alert("Error al actualizar proyecto");
+    } finally {
+      setUpdatingProject(false);
+    }
+  };
+
+  // Función para iniciar edición de proyecto
+  const startEditProject = (project: any) => {
+    setEditingProject(project);
+    setEditProjectName(project.name);
+    setEditProjectDescription(project.description || "");
   };
 
   // Función para cargar miembros de un grupo
@@ -203,9 +251,7 @@ export default function ProjectsPage() {
         setGroupTasks(prev => ({ ...prev, [groupId]: data }));
       }
     } catch {}
-  };
-
-  // Añadir miembro
+  };  // Añadir miembro
   const handleAddMember = async (projectId: number, groupId: number) => {
     const value = memberInputs[groupId]?.trim();
     if (!value) return;
@@ -213,7 +259,10 @@ export default function ProjectsPage() {
     try {
       const res = await fetch(`/api/projects/${projectId}/groups/${groupId}/members`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "userid": user?.id?.toString() || ""
+        },
         body: JSON.stringify({ emailOrUserId: value }),
       });
       if (res.ok) {
@@ -229,14 +278,16 @@ export default function ProjectsPage() {
       setAddingMember(prev => ({ ...prev, [groupId]: false }));
     }
   };
-
   // Eliminar miembro
   const handleRemoveMember = async (projectId: number, groupId: number, userId: number) => {
     setRemovingMember(prev => ({ ...prev, [groupId]: userId }));
     try {
       const res = await fetch(`/api/projects/${projectId}/groups/${groupId}/members`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "userid": user?.id?.toString() || ""
+        },
         body: JSON.stringify({ userId }),
       });
       if (res.ok) {
@@ -421,8 +472,7 @@ export default function ProjectsPage() {
                     <p className="text-gray-600 text-sm mb-3">{project.description}</p>
                   )}                  <div className="flex items-center text-sm text-gray-500 mb-2">
                     <span>{project._count?.groups ?? 0} grupos</span>
-                  </div>
-                  <div className="flex gap-2 mt-2">
+                  </div>                  <div className="flex gap-2 mt-2">
                     <button
                       className="flex-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                       onClick={e => {
@@ -432,6 +482,16 @@ export default function ProjectsPage() {
                       }}
                     >
                       + Nuevo Grupo
+                    </button>
+                    <button
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                      onClick={e => {
+                        e.stopPropagation();
+                        startEditProject(project);
+                      }}
+                      title="Editar proyecto"
+                    >
+                      ✏️
                     </button>
                     <button
                       className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
@@ -563,6 +623,47 @@ export default function ProjectsPage() {
                 disabled={creatingGroup}
               >
                 {creatingGroup ? "Creando..." : "Crear"}
+              </button>
+            </div>
+          </form>
+        </div>      )}
+      {/* Modal para editar proyecto */}
+      {editingProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <form onSubmit={handleUpdateProject} className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Editar Proyecto</h3>
+            <input
+              type="text"
+              className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Nombre del proyecto"
+              value={editProjectName}
+              onChange={e => setEditProjectName(e.target.value)}
+              required
+            />
+            <textarea
+              className="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Descripción (opcional)"
+              value={editProjectDescription}
+              onChange={e => setEditProjectDescription(e.target.value)}
+            />
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                onClick={() => {
+                  setEditingProject(null);
+                  setEditProjectName("");
+                  setEditProjectDescription("");
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                disabled={updatingProject}
+              >
+                {updatingProject ? "Actualizando..." : "Actualizar"}
               </button>
             </div>
           </form>

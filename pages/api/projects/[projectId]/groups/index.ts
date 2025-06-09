@@ -36,8 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const groups = await prisma.group.findMany({
         where: {
           projectId: projectIdNum
-        },
-        include: {
+        },        include: {
           members: {
             include: {
               user: {
@@ -52,16 +51,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           _count: {
             select: {
-              tasks: true
+              tasks: true,
+              members: true
             }
           }
-        },
-        orderBy: {
+        },orderBy: {
           createdAt: "desc"
         }
-      });
+      });      // Mapear los datos para incluir taskCount y memberCount
+      const groupsWithTaskCount = groups.map(group => ({
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        projectId: group.projectId,
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt,
+        members: group.members,
+        taskCount: group._count.tasks,
+        memberCount: group._count.members
+      }));
 
-      return res.status(200).json(groups);
+      return res.status(200).json(groupsWithTaskCount);
     }
 
     if (req.method === "POST") {
@@ -144,9 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           groupId: newGroup.id,
           role: "leader"
         }
-      });
-
-      // Recargar el grupo con la información del miembro
+      });      // Recargar el grupo con la información del miembro
       const groupWithMembers = await prisma.group.findUnique({
         where: { id: newGroup.id },
         include: {
@@ -164,13 +172,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           _count: {
             select: {
-              tasks: true
+              tasks: true,
+              members: true
             }
           }
         }
       });
 
-      return res.status(201).json(groupWithMembers);
+      // Mapear el grupo creado para incluir taskCount y memberCount
+      const groupWithTaskCount = {
+        id: groupWithMembers!.id,
+        name: groupWithMembers!.name,
+        description: groupWithMembers!.description,
+        projectId: groupWithMembers!.projectId,
+        createdAt: groupWithMembers!.createdAt,
+        updatedAt: groupWithMembers!.updatedAt,
+        members: groupWithMembers!.members,
+        taskCount: groupWithMembers!._count.tasks,
+        memberCount: groupWithMembers!._count.members
+      };
+
+      return res.status(201).json(groupWithTaskCount);
     }
 
     return res.status(405).json({ message: "Método no permitido" });

@@ -134,10 +134,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await prisma.project.delete({
         where: { id: Number(projectId) }
       });
-      
-      return res.status(200).json({ message: 'Proyecto eliminado exitosamente' });
+        return res.status(200).json({ message: 'Proyecto eliminado exitosamente' });
     } catch (error) {
       console.error('Error al eliminar proyecto:', error);
+      return res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  } else if (req.method === 'PUT') {
+    // Actualizar proyecto
+    const { projectId, name, description, userId } = req.body;
+    
+    if (!projectId || !name || !userId) {
+      return res.status(400).json({ message: 'projectId, name y userId son requeridos' });
+    }
+    
+    try {
+      // Verificar que el proyecto existe
+      const project = await prisma.project.findUnique({
+        where: { id: Number(projectId) },
+        include: {
+          company: {
+            select: { ownerId: true }
+          }
+        }
+      });
+      
+      if (!project) {
+        return res.status(404).json({ message: 'Proyecto no encontrado' });
+      }
+      
+      // Verificar permisos: debe ser owner del proyecto o owner de la empresa
+      const membership = await prisma.projectMember.findFirst({
+        where: {
+          projectId: Number(projectId),
+          userId: Number(userId),
+          role: 'owner'
+        }
+      });
+      
+      const isCompanyOwner = project.company.ownerId === Number(userId);
+      
+      if (!membership && !isCompanyOwner) {
+        return res.status(403).json({ message: 'No tienes permisos para editar este proyecto' });
+      }
+      
+      // Actualizar el proyecto
+      const updatedProject = await prisma.project.update({
+        where: { id: Number(projectId) },
+        data: {
+          name: name.trim(),
+          description: description?.trim() || null,
+        },
+        include: {
+          members: {
+            select: {
+              id: true,
+              role: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profileImage: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              groups: true,
+              members: true,
+            },
+          },
+        },
+      });
+      
+      return res.status(200).json(updatedProject);
+    } catch (error) {
+      console.error('Error al actualizar proyecto:', error);
       return res.status(500).json({ message: 'Error interno del servidor' });
     }
   } else {

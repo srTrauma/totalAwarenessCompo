@@ -39,12 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Solo mostrar posts activos para usuarios no autenticados o que no son el autor
       const userId = req.headers.userid ? parseInt(req.headers.userid as string) : null;
-      
-      if (!post.isActive && post.authorId !== userId) {
+        if (!post.isActive && post.authorId !== userId) {
         return res.status(404).json({ message: 'Post no encontrado' });
       }
 
-      res.status(200).json(post);    } else if (req.method === 'PUT') {
+      res.status(200).json(post);
+
+    } else if (req.method === 'PUT') {
       const userId = req.headers.userid ? parseInt(req.headers.userid as string) : null;
       
       if (!userId) {
@@ -102,9 +103,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           }
         }
+      });      res.status(200).json(updatedPost);
+
+    } else if (req.method === 'PATCH') {
+      // Actualización parcial (principalmente para cambio de estado activo/inactivo)
+      const userId = req.headers.userid ? parseInt(req.headers.userid as string) : null;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'No autorizado' });
+      }
+
+      const { isActive } = req.body;
+
+      // Verificar que el usuario sea el autor del post
+      const existingPost = await prisma.post.findFirst({
+        where: {
+          id: postIdNum,
+          authorId: userId
+        }
       });
 
-      res.status(200).json(updatedPost);
+      if (!existingPost) {
+        return res.status(404).json({ message: 'Post no encontrado o sin permisos' });
+      }
+
+      // Actualizar solo el estado si se proporciona
+      if (isActive !== undefined) {
+        const updatedPost = await prisma.post.update({
+          where: { id: postIdNum },
+          data: { isActive: Boolean(isActive) },
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                profileImage: true
+              }
+            },
+            company: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        });
+
+        return res.status(200).json(updatedPost);
+      }
+
+      // Si no hay campos para actualizar
+      return res.status(400).json({ message: 'Se debe proporcionar al menos un campo para actualizar' });
 
     } else if (req.method === 'DELETE') {
       const userId = req.headers.userid ? parseInt(req.headers.userid as string) : null;

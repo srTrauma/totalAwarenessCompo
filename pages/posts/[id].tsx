@@ -277,9 +277,8 @@ export default function PostDetailPage() {
                       title={post.isActive ? 'Desactivar' : 'Activar'}
                     >
                       {post.isActive ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
-                    </button>
-                    <button
-                      onClick={() => router.push(`/posts/${post.id}/edit`)}
+                    </button>                    <button
+                      onClick={() => router.push(`/posts?editPost=${post.id}`)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Editar"
                     >

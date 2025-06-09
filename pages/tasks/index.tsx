@@ -19,6 +19,7 @@ interface Group {
   name: string;
   description: string | null;
   taskCount: number;
+  memberCount: number;
 }
 
 // Reemplazar Workspace por Project en interfaces y estados
@@ -174,9 +175,46 @@ export default function TasksPage() {
     setGroups([]);
     fetchGroups(project.id);
   };
-
   const handleGroupSelect = (group: Group) => {
     setSelectedGroup(group);
+  };
+  // New function to handle task count updates
+  const handleTaskCountChange = async () => {
+    if (selectedProject && selectedGroup) {
+      try {
+        // Instead of refetching all groups, just update the specific group's task count
+        const response = await fetch(`/api/projects/${selectedProject.id}/groups/${selectedGroup.id}/task-count`, {
+          headers: {
+            userid: user!.id.toString()
+          }
+        });
+
+        if (response.ok) {
+          const { taskCount } = await response.json();
+          
+          // Update the specific group in the groups array
+          setGroups(prevGroups => 
+            prevGroups.map(group => 
+              group.id === selectedGroup.id 
+                ? { ...group, taskCount }
+                : group
+            )
+          );
+          
+          // Also update the selected group
+          setSelectedGroup(prevSelected => 
+            prevSelected ? { ...prevSelected, taskCount } : prevSelected
+          );
+        } else {
+          // Fallback: refetch all groups if the specific endpoint fails
+          await fetchGroups(selectedProject.id);
+        }
+      } catch (error) {
+        console.error('Error updating task count:', error);
+        // Fallback: refetch all groups if there's an error
+        await fetchGroups(selectedProject.id);
+      }
+    }
   };
 
   const handleBackToProjects = () => {
@@ -242,24 +280,40 @@ export default function TasksPage() {
               className="flex items-center text-blue-600 mb-4 hover:underline"
             >
               <FaArrowLeft className="mr-2" /> Volver
-            </button>
-            
-            {/* Breadcrumb */}
+            </button>            {/* Breadcrumb Navegable */}
             <div className="flex items-center text-sm text-gray-600 mb-4">
-              <span>{company.name}</span>
+              <button
+                onClick={() => router.push('/CompanySelection')}
+                className="hover:text-blue-600 hover:underline transition-colors cursor-pointer"
+                title="Cambiar empresa"
+              >
+                {company.name}
+              </button>
               {selectedProject && (
                 <>
                   <FaChevronRight className="mx-2 text-gray-400" />
-                  <span>{selectedProject.name}</span>
+                  <button
+                    onClick={handleBackToProjects}
+                    className="hover:text-blue-600 hover:underline transition-colors cursor-pointer"
+                    title="Volver a selección de proyectos"
+                  >
+                    {selectedProject.name}
+                  </button>
                 </>
               )}
               {selectedGroup && (
                 <>
                   <FaChevronRight className="mx-2 text-gray-400" />
-                  <span>{selectedGroup.name}</span>
+                  <button
+                    onClick={handleBackToGroups}
+                    className="hover:text-blue-600 hover:underline transition-colors cursor-pointer"
+                    title="Volver a selección de grupos"
+                  >
+                    {selectedGroup.name}
+                  </button>
                 </>
               )}
-            </div>            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            </div><div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-3xl font-bold text-gray-900">
                   Gestión de Tareas - {company.name}
@@ -280,12 +334,21 @@ export default function TasksPage() {
           </div>
 
           {/* Mostrar selección de proyecto si no hay uno seleccionado */}
-          {!selectedProject && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <FaUsers className="mr-2 text-blue-600" />
-                Selecciona un Proyecto
-              </h2>
+          {!selectedProject && (            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                  <FaUsers className="mr-2 text-blue-600" />
+                  Selecciona un Proyecto
+                </h2>
+                <button
+                  onClick={() => router.push('/projects')}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm leading-4 font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  title="Ir a la gestión completa de proyectos"
+                >
+                  <FaLayerGroup className="mr-2" />
+                  Gestionar Proyectos
+                </button>
+              </div>
               {projects.length === 0 ? (
                 <div className="text-center py-8">
                   <FaUsers className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -319,18 +382,27 @@ export default function TasksPage() {
 
           {/* Mostrar selección de grupo si hay proyecto seleccionado pero no grupo */}
           {selectedProject && !selectedGroup && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-lg shadow-sm p-6">              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                   <FaLayerGroup className="mr-2 text-blue-600" />
                   Grupos en {selectedProject.name}
                 </h2>
-                <button
-                  onClick={handleBackToProjects}
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  Cambiar proyecto
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => router.push(`/projects/${selectedProject.id}`)}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm leading-4 font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    title="Gestionar este proyecto"
+                  >
+                    <FaLayerGroup className="mr-2" />
+                    Gestionar Proyecto
+                  </button>
+                  <button
+                    onClick={handleBackToProjects}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    Cambiar proyecto
+                  </button>
+                </div>
               </div>
               
               {groups.length === 0 ? (
@@ -348,14 +420,19 @@ export default function TasksPage() {
                       key={group.id}
                       onClick={() => handleGroupSelect(group)}
                       className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-                    >
-                      <h3 className="font-semibold text-gray-900 mb-2">{group.name}</h3>
+                    >                      <h3 className="font-semibold text-gray-900 mb-2">{group.name}</h3>
                       {group.description && (
                         <p className="text-gray-600 text-sm mb-3">{group.description}</p>
                       )}
-                      <div className="flex items-center text-sm text-gray-500">
-                        <FaTasks className="mr-1" />
-                        <span>{group.taskCount} tareas</span>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <FaTasks className="mr-1" />
+                          <span>{group.taskCount} tareas</span>
+                        </div>
+                        <div className="flex items-center">
+                          <FaUsers className="mr-1" />
+                          <span>{group.memberCount} miembros</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -388,12 +465,12 @@ export default function TasksPage() {
                   {/* Botón Crear tarea solo para usuarios con permisos de gestión */}
                   
                 </div>
-              </div>
-              <TaskManager 
+              </div>              <TaskManager 
                 userId={user.id} 
                 projectId={selectedProject.id}
                 groupId={selectedGroup.id}
                 userRole={company.currentUserRole?.name?.toLowerCase() || 'member'}
+                onTaskCountChange={handleTaskCountChange}
               />
             </div>
           )}

@@ -34,9 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       if (!group) return res.status(404).json({ message: 'Grupo no encontrado' });
       return res.status(200).json(group.members);
-    }
-
-    if (req.method === 'POST') {
+    }    if (req.method === 'POST') {
       // Solo admin/owner/leader o owner de la empresa pueden agregar miembros
       let isCompanyOwner = false;
       if (!['owner', 'admin', 'leader'].includes(membership.role)) {
@@ -47,32 +45,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(403).json({ message: 'Sin permisos para agregar miembros' });
         }
       }
-      const { userId: newUserId } = req.body;
-      if (!newUserId) return res.status(400).json({ message: 'userId requerido' });
+      
+      const { userId: newUserId, emailOrUserId } = req.body;
+      let targetUserId: number;
+      
+      // Manejar tanto userId directo como emailOrUserId para compatibilidad
+      if (newUserId) {
+        targetUserId = newUserId;
+      } else if (emailOrUserId) {
+        // Buscar por email o ID
+        if (isNaN(Number(emailOrUserId))) {
+          // Es un email, buscar el usuario
+          const user = await prisma.user.findUnique({
+            where: { email: emailOrUserId.toLowerCase() },
+            select: { id: true }
+          });
+          if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+          }
+          targetUserId = user.id;
+        } else {
+          // Es un ID de usuario
+          targetUserId = Number(emailOrUserId);
+        }
+      } else {
+        return res.status(400).json({ message: 'userId o emailOrUserId requerido' });
+      }
+      
       // Obtener el proyecto para saber el companyId
       const project = await prisma.project.findUnique({ where: { id: projectIdNum } });
       if (!project) return res.status(404).json({ message: 'Proyecto no encontrado' });
       // Verificar que el usuario a agregar es miembro de la empresa
       const userCompany = await prisma.userCompany.findFirst({
-        where: { userId: newUserId, companyId: project.companyId, approved: true }
+        where: { userId: targetUserId, companyId: project.companyId, approved: true }
       });
       if (!userCompany) return res.status(400).json({ message: 'El usuario no es miembro de la empresa' });
       // Si no es miembro del proyecto, agregarlo como 'member'
       let targetMembership = await prisma.projectMember.findFirst({
-        where: { userId: newUserId, projectId: projectIdNum }
+        where: { userId: targetUserId, projectId: projectIdNum }
       });
       if (!targetMembership) {
         targetMembership = await prisma.projectMember.create({
-          data: { userId: newUserId, projectId: projectIdNum, role: 'member' }
+          data: { userId: targetUserId, projectId: projectIdNum, role: 'member' }
         });
       }
       // Verificar que no esté ya en el grupo
       const exists = await prisma.groupMember.findFirst({
-        where: { userId: newUserId, groupId: groupIdNum }
+        where: { userId: targetUserId, groupId: groupIdNum }
       });
       if (exists) return res.status(400).json({ message: 'El usuario ya es miembro del grupo' });
       const newMember = await prisma.groupMember.create({
-        data: { userId: newUserId, groupId: groupIdNum, role: 'member' },
+        data: { userId: targetUserId, groupId: groupIdNum, role: 'member' },
         include: { user: { select: { id: true, name: true, email: true, profileImage: true } } }
       });
       return res.status(201).json(newMember);

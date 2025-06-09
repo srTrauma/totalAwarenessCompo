@@ -30,9 +30,8 @@ interface ProjectGroup {
   createdAt: string;
   updatedAt: string;
   members: GroupMember[];
-  _count: {
-    tasks: number;
-  };
+  taskCount: number;
+  memberCount: number;
 }
 
 interface GroupManagerProps {
@@ -375,12 +374,15 @@ export default function GroupManager({ projectId, userId, userRole }: GroupManag
                       <FaEdit />
                     </button>
                   )}
-                </h4>
-                <p className="text-gray-600 text-sm">{group.description}</p>
-                <p className="text-xs text-gray-400 mt-1">Tareas: {group._count.tasks}</p>
-                {/* NUEVO: Miembros del grupo */}
+                </h4>                <p className="text-gray-600 text-sm">{group.description}</p>
+                <div className="flex items-center space-x-4 mt-1">
+                  <p className="text-xs text-gray-400">Tareas: {group.taskCount}</p>
+                  <p className="text-xs text-gray-400">Miembros: {group.memberCount}</p>
+                </div>                {/* Miembros del grupo */}
                 <div className="flex items-center mt-2 flex-wrap gap-2">
-                  <span className="text-xs text-gray-500 mr-2">Miembros: {group.members.length}</span>
+                  <span className="text-xs text-gray-500 mr-2">
+                    Miembros ({group.memberCount}):
+                  </span>
                   {group.members.map((member) => (
                     <div key={member.user.id} className="flex items-center gap-1 bg-white rounded-full px-2 py-1 border border-gray-200">
                       <div className="w-6 h-6 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center">

@@ -9,7 +9,8 @@ import {
   PencilIcon,
   TrashIcon,
   PaperClipIcon,
-  DocumentIcon
+  DocumentIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,6 +21,7 @@ interface TaskManagerProps {
   projectId: number;
   groupId?: number;
   userRole?: string;
+  onTaskCountChange?: () => void;
 }
 
 interface Task {
@@ -98,6 +100,76 @@ const statusLabels = {
   cancelled: 'Cancelada'
 };
 
+// Funciones auxiliares para archivos
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes) return '0 B';
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+};
+
+const getFileExtension = (fileName: string): string => {
+  const ext = fileName.split('.').pop()?.toUpperCase();
+  return ext || 'FILE';
+};
+
+const formatDate = (dateString: string): string => {
+  try {
+    return format(new Date(dateString), 'dd/MM/yy', { locale: es });
+  } catch {
+    return 'Fecha inválida';
+  }
+};
+
+const downloadFile = async (taskId: number, attachmentId: number, fileName: string): Promise<void> => {
+  try {
+    toast.loading(`Descargando ${fileName}...`);
+    
+    const storedUser = sessionStorage.getItem('user');
+    if (!storedUser) {
+      throw new Error('Usuario no autenticado');
+    }
+    
+    const user = JSON.parse(storedUser);
+    const response = await fetch(`/api/tasks/${taskId}/attachments/${attachmentId}/download`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'userid': user.id.toString(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error al descargar el archivo');
+    }
+
+    // Crear blob del archivo
+    const blob = await response.blob();
+    
+    // Crear URL temporal y descargar
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    
+    // Agregar al DOM temporalmente y hacer click
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Limpiar URL temporal
+    window.URL.revokeObjectURL(url);
+    
+    toast.dismiss();
+    toast.success(`${fileName} descargado correctamente`);
+  } catch (error) {
+    toast.dismiss();
+    console.error('Error al descargar archivo:', error);
+    toast.error(error instanceof Error ? error.message : 'Error al descargar el archivo');
+  }
+};
+
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
@@ -107,6 +179,8 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusChange, onCompleteWithFiles }) => {
+  console.log('TaskCard - task:', task);
+  console.log('TaskCard - attachments:', task.attachments);
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
@@ -204,34 +278,42 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onStatusCha
             Grupo: {task.group.name} • Proyecto: {task.group.project?.name || 'Sin proyecto'}
           </span>
         </div>
-      )}
-
-      {/* Mostrar attachments si existen */}
+      )}      {/* Mostrar attachments si existen */}
       {task.attachments && Array.isArray(task.attachments) && task.attachments.length > 0 && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="flex items-center text-xs text-gray-500 mb-2">
             <PaperClipIcon className="w-3 h-3 mr-1" />
             <span>{task.attachments.length} archivo(s) adjunto(s)</span>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {task.attachments.slice(0, 3).map((attachment) => (
-              <a
+          <div className="space-y-1">
+            {task.attachments.map((attachment) => (
+              <div
                 key={attachment.id}
-                href={attachment.filePath}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded truncate max-w-32"
-                title={attachment.fileName}
+                className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-2 rounded-md transition-colors group"
               >
-                <DocumentIcon className="w-3 h-3 mr-1 flex-shrink-0" />
-                <span className="truncate">{attachment.fileName}</span>
-              </a>
+                <div className="flex items-center flex-1 min-w-0">
+                  <DocumentIcon className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {attachment.fileName}
+                    </p>
+                    <div className="flex items-center text-xs text-gray-500 space-x-2">
+                      <span>{formatFileSize(attachment.fileSize)}</span>
+                      <span>•</span>
+                      <span>{getFileExtension(attachment.fileName)}</span>
+                      <span>•</span>
+                      <span>{formatDate(attachment.uploadedAt)}</span>
+                    </div>
+                  </div>
+                </div>                <button
+                  onClick={() => downloadFile(task.id, attachment.id, attachment.fileName)}
+                  className="ml-2 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Descargar archivo"
+                >
+                  Descargar
+                </button>
+              </div>
             ))}
-            {task.attachments.length > 3 && (
-              <span className="text-xs text-gray-400 px-2 py-1">
-                +{task.attachments.length - 3} más
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -394,16 +476,29 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, groups, onSubmit, onCancel })
               onChange={handleFileChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
-            />
-            {attachments.length > 0 && (
-              <div className="mt-2 space-y-1">
+            />            {attachments.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Archivos seleccionados:
+                </label>
                 {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                    <span className="text-sm text-gray-600 truncate flex-1">{file.name}</span>
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <DocumentIcon className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                        <div className="flex items-center text-xs text-gray-500 space-x-2">
+                          <span>{formatFileSize(file.size)}</span>
+                          <span>•</span>
+                          <span>{getFileExtension(file.name)}</span>
+                        </div>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
-                      className="text-red-500 hover:text-red-700 ml-2"
+                      className="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Eliminar archivo"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -480,20 +575,29 @@ const CompleteTaskForm: React.FC<CompleteTaskFormProps> = ({ task, onSubmit, onC
             <p className="text-xs text-gray-500 mt-1">
               Puedes seleccionar múltiples archivos para adjuntar
             </p>
-          </div>
-
-          {files.length > 0 && (
-            <div className="space-y-1">
+          </div>          {files.length > 0 && (
+            <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Archivos seleccionados:
               </label>
               {files.map((file, index) => (
-                <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
-                  <span className="text-sm text-gray-600 truncate flex-1">{file.name}</span>
+                <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <DocumentIcon className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                      <div className="flex items-center text-xs text-gray-500 space-x-2">
+                        <span>{formatFileSize(file.size)}</span>
+                        <span>•</span>
+                        <span>{getFileExtension(file.name)}</span>
+                      </div>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-red-500 hover:text-red-700 ml-2"
+                    className="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                    title="Eliminar archivo"
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
@@ -523,7 +627,7 @@ const CompleteTaskForm: React.FC<CompleteTaskFormProps> = ({ task, onSubmit, onC
   );
 };
 
-const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId, onTaskCountChange }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -546,9 +650,10 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
         headers: {
           'userid': userId.toString()
         }
-      });
-      if (response.ok) {
+      });      if (response.ok) {
         const data = await response.json();
+        console.log('Datos de tareas recibidos:', data);
+        console.log('Primera tarea con attachments:', data[0]?.attachments);
         setTasks(data);
       } else {
         const error = await response.json();
@@ -633,13 +738,15 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
         method,
         headers,
         body,
-      });
-
-      if (response.ok) {
+      });      if (response.ok) {
         toast.success(editingTask ? 'Tarea actualizada' : 'Tarea creada');
         setShowForm(false);
         setEditingTask(undefined);
         fetchTasks();
+        // Notify parent component about task count change
+        if (onTaskCountChange) {
+          onTaskCountChange();
+        }
       } else {
         const error = await response.json();
         toast.error(error.message || 'Error al procesar la solicitud');
@@ -661,12 +768,15 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
       });
 
       
-      
-      if (response.ok) {
+        if (response.ok) {
         const result = await response.json();
         
         toast.success('Tarea eliminada correctamente');
         fetchTasks(); // Recargar tareas
+        // Notify parent component about task count change
+        if (onTaskCountChange) {
+          onTaskCountChange();
+        }
       } else {
         const error = await response.json();
         
@@ -729,12 +839,14 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
           toast.error(error.message || 'Error al subir archivos');
           return;
         }
-      }
-
-      toast.success('Tarea completada' + (files.length > 0 ? ' con archivos adjuntos' : ''));
+      }      toast.success('Tarea completada' + (files.length > 0 ? ' con archivos adjuntos' : ''));
       setShowCompleteForm(false);
       setCompletingTask(undefined);
       fetchTasks();
+      // Notify parent component about task count change (status change might affect filtering)
+      if (onTaskCountChange) {
+        onTaskCountChange();
+      }
     } catch (error) {
       console.error('Error completing task with files:', error);
       toast.error('Error al completar la tarea');
@@ -750,11 +862,13 @@ const TaskManager: React.FC<TaskManagerProps> = ({ userId, projectId, groupId })
           'userid': userId.toString()
         },
         body: JSON.stringify({ status }),
-      });
-
-      if (response.ok) {
+      });      if (response.ok) {
         toast.success('Estado actualizado');
         fetchTasks();
+        // Notify parent component about task count change (status change might affect filtering)
+        if (onTaskCountChange) {
+          onTaskCountChange();
+        }
       } else {
         const error = await response.json();
         toast.error(error.message || 'Error al actualizar el estado');

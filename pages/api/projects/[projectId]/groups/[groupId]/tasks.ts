@@ -52,8 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         include: {
           project: { select: { id: true, name: true } }
         }
-      });
-      const tasksWithGroupInfo = tasks.map(task => ({
+      });      const tasksWithGroupInfo = tasks.map(task => ({
         ...task,
         attachments: Array.isArray(task.attachments) ? task.attachments : [],
         group: group ? {
@@ -62,6 +61,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           project: group.project
         } : null
       }));
+      console.log('Enviando tareas al frontend:', JSON.stringify(tasksWithGroupInfo.map(t => ({
+        id: t.id,
+        title: t.title,
+        attachments: t.attachments
+      })), null, 2));
       res.status(200).json(tasksWithGroupInfo);
     } else if (req.method === 'POST') {
       // Soportar multipart/form-data para adjuntos
