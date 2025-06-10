@@ -105,7 +105,8 @@ export default function EditCompany() {
         headers: {
           "Content-Type": "application/json",
           userid: user!.id.toString()
-        },        body: JSON.stringify(updateData)
+        },
+        body: JSON.stringify(updateData),
       });
 
       if (response.ok) {
