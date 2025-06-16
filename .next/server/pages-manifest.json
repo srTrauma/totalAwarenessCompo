@@ -1,1 +1,24 @@
-{}
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/_document": "pages/_document.js",
+  "/api/companies/list": "pages/api/companies/list.js",
+  "/api/notifications": "pages/api/notifications.js",
+  "/api/companies/detail": "pages/api/companies/detail.js",
+  "/projects": "pages/projects.js",
+  "/api/projects": "pages/api/projects.js",
+  "/projects/[projectId]": "pages/projects/[projectId].js",
+  "/api/projects/[projectId]/groups": "pages/api/projects/[projectId]/groups.js",
+  "/api/projects/[projectId]/groups/[groupId]/members": "pages/api/projects/[projectId]/groups/[groupId]/members.js",
+  "/tasks": "pages/tasks.js",
+  "/api/projects/[projectId]/groups/[groupId]/tasks": "pages/api/projects/[projectId]/groups/[groupId]/tasks.js",
+  "/api/tasks/[taskId]/attachments/[attachmentId]/download": "pages/api/tasks/[taskId]/attachments/[attachmentId]/download.js",
+  "/api/tasks/[taskId]": "pages/api/tasks/[taskId].js",
+  "/api/projects/[projectId]/groups/[groupId]/task-count": "pages/api/projects/[projectId]/groups/[groupId]/task-count.js",
+  "/api/tasks/test-put": "pages/api/tasks/test-put.js",
+  "/api/tasks/[taskId]/attachments": "pages/api/tasks/[taskId]/attachments.js",
+  "/posts": "pages/posts.js",
+  "/api/posts": "pages/api/posts.js",
+  "/posts/[id]": "pages/posts/[id].js",
+  "/api/posts/[postId]": "pages/api/posts/[postId].js"
+}

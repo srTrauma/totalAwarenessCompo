@@ -8,42 +8,42 @@ datasource db {
 }
 
 model User {
-  id            Int           @id @default(autoincrement())
-  name          String        @unique
-  email         String        @unique
-  password      String
-  profileImage  String?       // Para la foto de perfil
-  faqProfile    String        @default("user") // guest, user, admin - Para perfiles de FAQ
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  ownedCompanies Company[]    @relation("CompanyOwner")
-  memberships   UserCompany[]
-  notifications Notification[]
-  emailConfirmed      Boolean   @default(false) // <-- Añadido para confirmación de email
-  emailConfirmationToken String?                // <-- Añadido para confirmación de email  // Nuevas relaciones para tareas y salas
-  assignedTasks Task[]        @relation("TaskAssignee")
-  createdTasks  Task[]        @relation("TaskCreator")
-  groupMembers  GroupMember[] // Miembro de grupos
-  posts         Post[]
-  invitations   Invitation[]
-  projectMemberships ProjectMember[]
+  id                     Int             @id @default(autoincrement())
+  name                   String          @unique
+  email                  String          @unique
+  password               String
+  profileImage           String?
+  faqProfile             String          @default("user")
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  ownedCompanies         Company[]       @relation("CompanyOwner")
+  memberships            UserCompany[]
+  notifications          Notification[]
+  emailConfirmed         Boolean         @default(false)
+  emailConfirmationToken String?
+  assignedTasks          Task[]          @relation("TaskAssignee")
+  createdTasks           Task[]          @relation("TaskCreator")
+  groupMembers           GroupMember[]
+  posts                  Post[]
+  invitations            Invitation[]
+  projectMemberships     ProjectMember[]
 }
 
 model Company {
   id          Int           @id @default(autoincrement())
   name        String
   description String?
-  logoUrl     String?       // URL de la imagen/logo de la empresa
+  logoUrl     String?
   public      Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   ownerId     Int
   owner       User          @relation("CompanyOwner", fields: [ownerId], references: [id])
   members     UserCompany[]
-  projects    Project[]     // Relación con proyectos
-  posts       Post[]        // Relación con posts
+  projects    Project[]
+  posts       Post[]
   invitations Invitation[]
-  
+
   @@unique([name, ownerId])
 }
 
@@ -51,7 +51,7 @@ model UserCompany {
   id        Int      @id @default(autoincrement())
   userId    Int
   companyId Int
-  roleId    Int      @default(3) // Por defecto es MEMBER (id=3)
+  roleId    Int      @default(3)
   joinedAt  DateTime @default(now())
   approved  Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -61,27 +61,26 @@ model UserCompany {
   @@unique([userId, companyId])
 }
 
-// Modelo para sustituir el enum Role
 model Role {
-  id             Int           @id @default(autoincrement())
-  name           String        @unique // OWNER, ADMIN, MEMBER, VIEWER
-  description    String?
-  level          Int           @unique // Nivel de permiso (1=mayor, 4=menor)
-  userCompanies  UserCompany[]
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  description   String?
+  level         Int           @unique
+  userCompanies UserCompany[]
 }
 
 model Faq {
-  id                    Int       @id @default(autoincrement())
-  question              String
-  answer                String?
-  profile               String?
-  createdByUserId       Int?
-  createdByUserName     String?
-  respondedByUserId     Int?
-  respondedByUserName   String?
-  respondedAt           DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                  Int       @id @default(autoincrement())
+  question            String
+  answer              String?
+  profile             String?
+  createdByUserId     Int?
+  createdByUserName   String?
+  respondedByUserId   Int?
+  respondedByUserName String?
+  respondedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model Notification {
@@ -94,20 +93,18 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-// Modelo para Proyectos
 model Project {
-  id          Int       @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   name        String
   description String?
   companyId   Int
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  isActive    Boolean   @default(true)
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isActive    Boolean         @default(true)
   members     ProjectMember[]
   groups      Group[]
   invitations Invitation[]
 }
 
-// Miembros de Proyectos
 model ProjectMember {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -116,104 +113,94 @@ model ProjectMember {
   joinedAt  DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@unique([userId, projectId])
 }
 
-// Grupos dentro de los Proyectos
 model Group {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   name        String
   description String?
   projectId   Int
-  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   members     GroupMember[]
-  tasks       Task[]    // Tareas de grupo
+  tasks       Task[]
 }
 
-// Miembros de los Grupos
 model GroupMember {
-  id      Int      @id @default(autoincrement())
-  userId  Int
-  groupId Int
-  role    String   @default("member")
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  groupId  Int
+  role     String   @default("member")
   joinedAt DateTime @default(now())
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
   @@unique([userId, groupId])
 }
 
-// Modelo para Tareas
 model Task {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  priority    String    @default("medium") // low, medium, high, urgent
-  status      String    @default("pending") // pending, in_progress, completed, cancelled
-  dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relaciones
-  assigneeId  Int?
-  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  creatorId   Int
-  creator     User      @relation("TaskCreator", fields: [creatorId], references: [id])
-  groupId     Int?      // Pertenece a un grupo
-  group       Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  parentTaskId Int?     // Si es tarea individual, referencia a la tarea de grupo
-  parentTask   Task?    @relation("Subtasks", fields: [parentTaskId], references: [id])
-  subtasks     Task[]   @relation("Subtasks")
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String?
+  priority     String           @default("medium")
+  status       String           @default("pending")
+  dueDate      DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  assigneeId   Int?
+  assignee     User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId    Int
+  creator      User             @relation("TaskCreator", fields: [creatorId], references: [id])
+  groupId      Int?
+  group        Group?           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  parentTaskId Int?
+  parentTask   Task?            @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks     Task[]           @relation("Subtasks")
   attachments  TaskAttachment[]
 }
 
-// Archivos adjuntos de tareas
 model TaskAttachment {
-  id          Int      @id @default(autoincrement())
-  taskId      Int
-  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  fileName    String
-  filePath    String
-  fileSize    Int?
-  mimeType    String?
-  uploadedBy  Int
-  uploadedAt  DateTime @default(now())
-  type        String   @default("general") // general, completion_proof
+  id         Int      @id @default(autoincrement())
+  taskId     Int
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileName   String
+  filePath   String
+  fileSize   Int?
+  mimeType   String?
+  uploadedBy Int
+  uploadedAt DateTime @default(now())
+  type       String   @default("general")
 }
 
-// Modelo para Posts de Empresas
 model Post {
-  id          Int      @id @default(autoincrement())
-  title       String
-  content     String
-  imageUrl    String?
-  linkUrl     String?
-  type        String   @default("general") // general, job_offer, news, event
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relaciones
-  authorId    Int
-  author      User     @relation(fields: [authorId], references: [id])
-  companyId   Int
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  imageUrl  String?
+  linkUrl   String?
+  type      String   @default("general")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  companyId Int
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
-// Modelo para invitaciones
 model Invitation {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  companyId   Int
-  projectId   Int?
-  status      String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
-  role        String   @default("MEMBER")  // ADMIN, MEMBER
-  expires     DateTime
-  createdAt   DateTime @default(now())
-  
-  // Relaciones
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  companyId Int
+  projectId Int?
+  status    String   @default("PENDING")
+  role      String   @default("MEMBER")
+  expires   DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }

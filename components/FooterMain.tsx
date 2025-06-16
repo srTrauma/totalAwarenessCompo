@@ -42,29 +42,6 @@ export default function FooterMain() {
                             <li><Link href="/faq" className="hover:underline hover:text-blue-600">Preguntas Frecuentes</Link></li>
                         </ul>
                     </div>
-                    <div>
-                        <h3 className="text-base font-semibold mb-4">Legal</h3>
-                        <ul className="space-y-2 text-sm">
-                            <li><Link href="/privacy" className="hover:underline hover:text-blue-600">Política de Privacidad</Link></li>
-                            <li><Link href="/terms" className="hover:underline hover:text-blue-600">Términos de Servicio</Link></li>
-                        </ul>
-                        <div className="mt-6">
-                            <h4 className="text-xs font-semibold mb-2">Síguenos</h4>
-                            <div className="flex space-x-3">
-                                <a href="#" aria-label="Twitter" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaTwitter /></a>
-                                <a href="#" aria-label="LinkedIn" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaLinkedinIn /></a>
-                                <a href="#" aria-label="Instagram" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaInstagram /></a>
-                                <a href="#" aria-label="GitHub" className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700"><FaGithub /></a>
-                            </div>
-                        </div>
-                        <div className="mt-8">
-                            <h4 className="text-xs font-semibold mb-2">Newsletter</h4>
-                            <form className="flex items-center gap-2">
-                                <input type="email" placeholder="Tu email" className="px-3 py-2 border border-blue-100 rounded-md text-sm bg-white text-blue-900 focus:outline-none focus:border-blue-900" />
-                                <button type="submit" className="bg-blue-900 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-800 transition">Suscribirse</button>
-                            </form>
-                        </div>
-                    </div>
                 </div>
                 <div className="mt-12 border-t border-blue-100 pt-6 text-xs text-blue-600 text-center">
                     © {new Date().getFullYear()} Total Awareness. Todos los derechos reservados.
