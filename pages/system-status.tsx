@@ -72,9 +72,8 @@ export default function SystemStatus() {
                 </div>
 
                 <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h2 className="text-lg font-semibold mb-2">💡 Recomendaciones</h2>
-                  <ul className="space-y-2">
-                    {healthData.recommendations && healthData.recommendations.map((rec, index) => (
+                  <h2 className="text-lg font-semibold mb-2">💡 Recomendaciones</h2>                  <ul className="space-y-2">
+                    {healthData.recommendations && healthData.recommendations.map((rec: string, index: number) => (
                       <li key={index} className="text-sm text-gray-700">
                         {rec}
                       </li>
