@@ -3,8 +3,10 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/api/register": "pages/api/register.js",
+  "/system-status": "pages/system-status.js",
+  "/test-forgot-password": "pages/test-forgot-password.js",
   "/Login": "pages/Login.js",
-  "/auth/forgot-password": "pages/auth/forgot-password.js",
-  "/api/auth/forgot-password": "pages/api/auth/forgot-password.js"
+  "/api/auth/forgot-password": "pages/api/auth/forgot-password.js",
+  "/api/register": "pages/api/register.js",
+  "/auth/forgot-password": "pages/auth/forgot-password.js"
 }

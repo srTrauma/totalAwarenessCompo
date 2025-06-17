@@ -349,6 +349,117 @@ npm test
 npm run test:watch
 ```
 
+## 🔧 Troubleshooting (Resolución de Problemas)
+
+### Error 500 en Reset de Contraseña (Producción)
+
+Si recibes un error 500 al usar forgot-password en producción:
+
+#### 1. **Verificar Variables de Entorno**
+```bash
+# En Render (o tu servicio de hosting)
+EMAIL_USER=tu-email@gmail.com
+EMAIL_PASS=tu-contraseña-de-aplicacion
+NEXT_PUBLIC_BASE_URL=https://tu-dominio.onrender.com
+DATABASE_URL=file:./prisma/dev.db
+```
+
+#### 2. **Revisar Logs del Servidor**
+```bash
+# En Render, ve a "Logs" en tu servicio
+# Busca líneas que empiecen con:
+🔍 Iniciando forgot-password endpoint
+❌ Error de base de datos
+❌ Error enviando email
+```
+
+#### 3. **Página de Testing**
+Accede a `/test-forgot-password` para probar el endpoint:
+```
+https://tu-dominio.onrender.com/test-forgot-password
+```
+
+#### 4. **Problemas Comunes y Soluciones**
+
+**📧 Email No Se Envía:**
+- Verifica que `EMAIL_USER` y `EMAIL_PASS` estén configurados
+- Asegúrate de usar una **contraseña de aplicación** de Gmail, no tu contraseña normal
+- Comprueba que la verificación en 2 pasos esté activada
+
+**🗄️ Error de Base de Datos:**
+```bash
+# Recrear migraciones en producción
+npx prisma migrate deploy
+npx prisma generate
+```
+
+**🌐 URL Incorrecta:**
+- `NEXT_PUBLIC_BASE_URL` debe apuntar a tu dominio de producción
+- No olvides el `https://`
+
+**🔑 Token No Se Genera:**
+- Verifica que el usuario exista en la base de datos
+- Comprueba los logs para errores de Prisma
+
+#### 5. **Debugging Paso a Paso**
+
+1. **Usar página de test:**
+   ```
+   https://tu-app.onrender.com/test-forgot-password
+   ```
+
+2. **Verificar respuesta del servidor:**
+   - Estado 200: ✅ Éxito (revisa logs para URL)
+   - Estado 400: ❌ Email inválido o faltante
+   - Estado 500: ❌ Error interno (revisa logs)
+
+3. **Revisar logs detallados:**
+   ```
+   🔍 Iniciando forgot-password endpoint
+   🌍 NODE_ENV: production
+   🔧 EMAIL_USER configurado: true/false
+   🔧 EMAIL_PASS configurado: true/false
+   📧 Email recibido: tes***
+   ✅ Email válido, buscando usuario...
+   ```
+
+4. **Si no funciona el email:**
+   - Los logs mostrarán la URL de reset: `🔗 URL de reset para logs`
+   - Copia esa URL y úsala manualmente para probar
+
+### Problemas de Base de Datos
+
+#### Error: "database is locked"
+```bash
+# Detener el servidor y reiniciar
+pkill -f node
+npm run dev
+```
+
+#### Error: "table doesn't exist"
+```bash
+# Recrear la base de datos
+npx prisma migrate reset --force
+npm run seed
+```
+
+### Problemas de Desarrollo
+
+#### Puerto ya en uso
+```bash
+# Cambiar puerto
+npm run dev -- -p 3001
+# O eliminar proceso
+npx kill-port 3000
+```
+
+#### Módulos no encontrados
+```bash
+# Limpiar y reinstalar
+rm -rf node_modules package-lock.json
+npm install
+```
+
 ## 📞 Soporte
 
 Para preguntas, problemas o sugerencias:
