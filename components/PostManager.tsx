@@ -10,7 +10,8 @@ import {
   PhotoIcon,
   BriefcaseIcon,
   MegaphoneIcon,
-  CalendarIcon
+  CalendarIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -189,9 +190,10 @@ interface PostFormProps {
   currentCompanyId?: number;
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  submitting?: boolean;
 }
 
-const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, onSubmit, onCancel }) => {
+const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, onSubmit, onCancel, submitting = false }) => {
   const [title, setTitle] = useState(post?.title || '');
   const [content, setContent] = useState(post?.content || '');
   const [type, setType] = useState(post?.type || 'general');
@@ -293,24 +295,33 @@ const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, 
               placeholder="Título del post"
               required
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          </div>          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo de publicación *
               </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {Object.entries(postTypeConfig).map(([value, config]) => (
-                  <option key={value} value={value}>
-                    {config.label}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(postTypeConfig).map(([value, config]) => {
+                  const IconComponent = config.icon;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setType(value)}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        type === value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <IconComponent className="w-6 h-6 mb-1" />
+                        <span className="text-xs font-medium">{config.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>
@@ -406,21 +417,31 @@ const PostForm: React.FC<PostFormProps> = ({ post, companies, currentCompanyId, 
                 )}
               </div>
             </div>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
+          </div>          <div className="flex space-x-3 pt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {post ? 'Actualizar' : 'Publicar'}
+              {submitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {post ? 'Actualizando...' : 'Publicando...'}
+                </>
+              ) : (
+                post ? 'Actualizar' : 'Publicar'
+              )}
             </button>
           </div>
         </form>
@@ -434,16 +455,46 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
   const [companies, setCompanies] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingPost, setEditingPost] = useState<Post | undefined>();
-  const [filter, setFilter] = useState('all');
+  const [editingPost, setEditingPost] = useState<Post | undefined>();  const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
 
   // Solo owners y admins pueden crear posts
   const canCreatePosts = userRole === 'OWNER' || userRole === 'ADMIN';
-
   useEffect(() => {
     fetchPosts();
     fetchCompanies();
   }, []);
+
+  // Agregar shortcuts de teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + K para enfocar búsqueda
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="Buscar"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+      
+      // Ctrl/Cmd + N para crear nuevo post (solo si puede crear)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && canCreatePosts) {
+        e.preventDefault();
+        setShowForm(true);
+      }
+      
+      // Escape para cerrar formulario
+      if (e.key === 'Escape' && showForm) {
+        setShowForm(false);
+        setEditingPost(undefined);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canCreatePosts, showForm]);
   const fetchPosts = async () => {
     try {
       const response = await fetch('/api/posts', {
@@ -488,8 +539,8 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
     } catch (error) {
       console.error('Error fetching companies:', error);
     }
-  };
-  const handleSubmit = async (data: any) => {
+  };  const handleSubmit = async (data: any) => {
+    setSubmitting(true);
     try {
       const url = editingPost ? `/api/posts/${editingPost.id}` : '/api/posts';
       const method = editingPost ? 'PUT' : 'POST';
@@ -515,6 +566,8 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
     } catch (error) {
       console.error('Error submitting post:', error);
       toast.error('Error al procesar la solicitud');
+    } finally {
+      setSubmitting(false);
     }
   };
   const handleDelete = async (id: number) => {
@@ -562,42 +615,223 @@ const PostManager: React.FC<PostManagerProps> = ({ userId, companyId, userRole }
       console.error('Error toggling post status:', error);
       toast.error('Error al actualizar el post');
     }
-  };
-
-  const filteredPosts = posts.filter(post => {
-    if (filter === 'all') return true;
-    return post.type === filter;
+  };  const filteredPosts = posts.filter(post => {
+    // Filtro por tipo
+    const typeMatch = filter === 'all' || post.type === filter;
+    
+    // Filtro por búsqueda
+    const searchMatch = searchQuery.trim() === '' || 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.author.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return typeMatch && searchMatch;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'title':
+        return a.title.localeCompare(b.title);
+      default:
+        return 0;
+    }
   });
 
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      {canCreatePosts && (
-        <button onClick={() => setShowForm(true)} className="mb-4 bg-blue-600 text-white px-4 py-2 rounded-md">
-          Crear nuevo post
-        </button>
-      )}
-      {/* Renderiza el formulario solo si showForm es true */}
+    <div className="space-y-6">
+      {/* Header con botón crear y filtros */}
+      <div className="bg-white rounded-lg shadow-sm p-6">        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Posts de Empresa</h2>
+            <p className="text-sm text-gray-600">
+              Gestiona las publicaciones de tu empresa
+              <span className="ml-2 text-xs text-gray-400">
+                (Ctrl+K para buscar{canCreatePosts ? ', Ctrl+N para crear' : ''})
+              </span>
+            </p>
+          </div>
+          
+          {canCreatePosts && (
+            <button 
+              onClick={() => setShowForm(true)} 
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Crear Post
+            </button>
+          )}
+        </div>        {/* Filtros y búsqueda */}
+        <div className="mt-6 border-t pt-4 space-y-4">          {/* Barra de búsqueda y ordenamiento */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por título, contenido o autor..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'title')}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="newest">Más recientes</option>
+              <option value="oldest">Más antiguos</option>
+              <option value="title">Por título</option>
+            </select>
+            
+            {(searchQuery || filter !== 'all' || sortBy !== 'newest') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilter('all');
+                  setSortBy('newest');
+                }}
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Restablecer
+              </button>
+            )}
+          </div>
+            {/* Estadísticas de resultados */}
+          {(searchQuery || filter !== 'all' || sortBy !== 'newest') && (
+            <div className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
+              <span>
+                Mostrando {filteredPosts.length} de {posts.length} posts
+                {searchQuery && ` con "${searchQuery}"`}
+                {filter !== 'all' && ` del tipo "${postTypeConfig[filter as keyof typeof postTypeConfig]?.label}"`}
+              </span>
+              <span className="text-gray-400">•</span>
+              <span>
+                Ordenado por: {
+                  sortBy === 'newest' ? 'más recientes' :
+                  sortBy === 'oldest' ? 'más antiguos' : 'título'
+                }
+              </span>
+            </div>
+          )}
+            {/* Filtros por tipo */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Filtrar por tipo:</span>
+              {(filter !== 'all' || searchQuery) && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {filteredPosts.length} resultado{filteredPosts.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  filter === 'all'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                }`}
+              >
+                Todos ({posts.length})
+              </button>
+              
+              {Object.entries(postTypeConfig).map(([key, config]) => {
+                const count = posts.filter(post => post.type === key).length;
+                const IconComponent = config.icon;
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setFilter(key)}
+                    className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      filter === key
+                        ? `${config.color} shadow-md ring-2 ring-offset-1 ring-current`
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4 mr-2" />
+                    {config.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Formulario modal */}
       {showForm && (
         <PostForm
           companies={companies}
           currentCompanyId={companyId}
-          onSubmit={handleSubmit}
-          onCancel={() => setShowForm(false)}
+          onSubmit={handleSubmit}          onCancel={() => {
+            setShowForm(false);
+            setEditingPost(undefined);
+          }}
           post={editingPost}
+          submitting={submitting}
         />
-      )}
-      {/* Lista de posts */}
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            isOwner={userId === post.author.id}
-            onEdit={setEditingPost}
-            onDelete={handleDelete}
-            onToggleActive={handleToggleActive}
-          />
-        ))}
+      )}      {/* Lista de posts */}
+      <div className="space-y-4">        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              isOwner={userId === post.author.id || ['OWNER', 'ADMIN'].includes(userRole)}
+              onEdit={(post) => {
+                setEditingPost(post);
+                setShowForm(true);
+              }}
+              onDelete={handleDelete}
+              onToggleActive={handleToggleActive}
+            />
+          ))
+        ) : (          <div className="text-center py-12">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              {searchQuery && filter !== 'all' 
+                ? `No se encontraron posts que contengan "${searchQuery}" del tipo "${postTypeConfig[filter as keyof typeof postTypeConfig]?.label}"`
+                : searchQuery 
+                ? `No se encontraron posts que contengan "${searchQuery}"`
+                : filter !== 'all' 
+                ? `No hay posts de tipo "${postTypeConfig[filter as keyof typeof postTypeConfig]?.label}"`
+                : 'No hay posts'
+              }
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {searchQuery || filter !== 'all' 
+                ? 'Intenta cambiar los filtros de búsqueda.'
+                : canCreatePosts 
+                ? 'Comienza creando tu primer post.' 
+                : 'No hay contenido disponible en este momento.'
+              }
+            </p>
+            {canCreatePosts && !searchQuery && filter === 'all' && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5 mr-2" />
+                  Crear tu primer post
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

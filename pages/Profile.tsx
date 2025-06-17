@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
-import { FaUser, FaEnvelope, FaLock, FaSave, FaArrowLeft } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaLock, FaSave, FaArrowLeft, FaBuilding, FaSignOutAlt, FaCrown, FaUserShield } from "react-icons/fa";
 
 
 interface User {
@@ -29,6 +29,8 @@ export default function Profile() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [faqProfile, setFaqProfile] = useState("");
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
@@ -41,6 +43,7 @@ export default function Profile() {
     setEmail(parsedUser.email);
     setFaqProfile(parsedUser.faqProfile || "");
     fetchUserProfile(parsedUser.id);
+    fetchUserCompanies(parsedUser.id);
   }, [router]);
 
   async function fetchUserProfile(userId: number) {
@@ -49,20 +52,47 @@ export default function Profile() {
         headers: {
           userid: userId.toString()
         }
-      });      if (response.ok) {
+      });
+
+      if (response.ok) {
         const data = await response.json();
-        setUser(data);
-        setName(data.name);
-        setEmail(data.email);
+        // Actualizar la información del usuario
+        setUser(prev => ({ 
+          ...prev, 
+          ...data, 
+          faqProfile: data.faqProfile || prev?.faqProfile || "" 
+        }));
         setFaqProfile(data.faqProfile || "");
       } else {
-        setError("Error al cargar el perfil");
+        setError("Error al cargar el perfil del usuario");
       }
     } catch (error) {
       console.error("Error:", error);
       setError("Error al conectar con el servidor");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchUserCompanies(userId: number) {
+    try {
+      setLoadingCompanies(true);
+      const response = await fetch(`/api/companies/list?userId=${userId}`, {
+        headers: {
+          userid: userId.toString()
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data);
+      } else {
+        console.error("Error al cargar empresas del usuario");
+      }
+    } catch (error) {
+      console.error("Error al cargar empresas:", error);
+    } finally {
+      setLoadingCompanies(false);
     }
   }
 
@@ -171,6 +201,48 @@ export default function Profile() {
   const handleProfileImageChange = (imageUrl: string | null) => {
     setUser(prev => prev ? { ...prev, profileImage: imageUrl || undefined } : null);
   };
+
+  async function leaveCompany(companyId: number, companyName: string) {
+    if (!confirm(`¿Estás seguro de que quieres salir de la empresa "${companyName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      setLoadingCompanies(true);
+      const response = await fetch("/api/companies/leave", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          userid: user!.id.toString()
+        },
+        body: JSON.stringify({
+          companyId: companyId
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(data.message);
+        
+        // Recargar la lista de empresas
+        await fetchUserCompanies(user!.id);
+        
+        // Si era la empresa seleccionada, limpiar la selección
+        const selectedCompany = sessionStorage.getItem("selectedCompany");
+        if (selectedCompany && Number(selectedCompany) === companyId) {
+          sessionStorage.removeItem("selectedCompany");
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Error al salir de la empresa");
+      }
+    } catch (error) {
+      console.error("Error al salir de la empresa:", error);
+      setError("Error al conectar con el servidor");
+    } finally {
+      setLoadingCompanies(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -358,6 +430,86 @@ export default function Profile() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Membresías de empresas */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h2 className="text-lg font-medium mb-4 flex items-center">
+                  <FaBuilding className="mr-2 text-blue-600" />
+                  Mis Empresas
+                </h2>
+                
+                {loadingCompanies ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : companies.length > 0 ? (
+                  <div className="space-y-3">
+                    {companies.map((company) => (
+                      <div 
+                        key={company.id} 
+                        className="bg-gray-50 rounded-lg p-4 flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {company.logoUrl ? (
+                            <img 
+                              src={company.logoUrl} 
+                              alt={`${company.name} logo`}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="bg-blue-100 rounded-full p-2">
+                              <FaBuilding className="text-blue-600 text-sm" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-medium text-gray-900">{company.name}</h3>
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                company.role === 'OWNER' ? 'bg-purple-100 text-purple-800' :
+                                company.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {company.role === 'OWNER' && <FaCrown className="mr-1" />}
+                                {company.role === 'ADMIN' && <FaUserShield className="mr-1" />}
+                                {company.role}
+                              </span>
+                              {company.approved ? (
+                                <span className="text-green-600">Aprobado</span>
+                              ) : (
+                                <span className="text-yellow-600">Pendiente</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Solo mostrar botón de salir si no es el propietario */}
+                        {!company.isOwner && (
+                          <button
+                            onClick={() => leaveCompany(company.id, company.name)}
+                            disabled={loadingCompanies}
+                            className="flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                            title="Salir de la empresa"
+                          >
+                            <FaSignOutAlt className="mr-2" />
+                            Salir
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <FaBuilding className="mx-auto text-4xl mb-2 text-gray-300" />
+                    <p>No eres miembro de ninguna empresa</p>
+                    <button
+                      onClick={() => router.push("/companies/explore")}
+                      className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                    >
+                      Explorar empresas disponibles
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Información de cuenta */}

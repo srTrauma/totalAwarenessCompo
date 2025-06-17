@@ -4,7 +4,7 @@ import Head from "next/head";
 import NavBar from "@/components/NavBar";
 import PublicPostsFeed from "@/components/PublicPostsFeed";
 import CompanyImageUpload from "@/components/companies/CompanyImageUpload";
-import { FaBuilding, FaPlus, FaSearch, FaLock, FaGlobe, FaUserShield } from "react-icons/fa";
+import { FaBuilding, FaPlus, FaSearch, FaLock, FaGlobe, FaUserShield, FaSignInAlt, FaSignOutAlt, FaClock } from "react-icons/fa";
 
 
 interface Company {
@@ -117,6 +117,48 @@ export default function CompanySelection() {
     router.push("/Login");
   }
 
+  async function leaveCompany(companyId: number, companyName: string) {
+    if (!confirm(`¿Estás seguro de que quieres salir de la empresa "${companyName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch("/api/companies/leave", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          userid: user!.id.toString()
+        },
+        body: JSON.stringify({
+          companyId: companyId
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        
+        // Recargar la lista de empresas
+        await fetchCompanies(user!.id);
+        
+        // Si era la empresa seleccionada, limpiar la selección
+        const selectedCompany = sessionStorage.getItem("selectedCompany");
+        if (selectedCompany && Number(selectedCompany) === companyId) {
+          sessionStorage.removeItem("selectedCompany");
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Error al salir de la empresa");
+      }
+    } catch (error) {
+      console.error("Error al salir de la empresa:", error);
+      alert("Error al conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (loading && !companies.length) {
     return (
       <>
@@ -162,15 +204,12 @@ export default function CompanySelection() {
               <h2 className="text-2xl font-semibold mb-4">Selecciona una empresa</h2>
               
               {companies.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {companies.map((company) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                  {companies.map((company) => (
                     <div 
                       key={company.id} 
-                      className={`border rounded-lg overflow-hidden hover:shadow-md transition-shadow ${
-                        company.approved ? 'cursor-pointer' : 'opacity-75'
-                      }`}
-                      onClick={() => selectCompany(company.id, company.approved)}
-                    >                      <div className="p-5">
+                      className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                    >
+                      <div className="p-5">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center">
                             {company.logoUrl ? (
@@ -201,7 +240,7 @@ export default function CompanySelection() {
                           </p>
                         )}
                         
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm mb-4">
                           <div className="flex items-center">
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
                               {company.role}
@@ -217,6 +256,39 @@ export default function CompanySelection() {
                             <span className="text-yellow-600">
                               Pendiente de aprobación
                             </span>
+                          )}
+                        </div>
+                        
+                        {/* Botones de acción */}
+                        <div className="flex gap-2">
+                          {company.approved ? (
+                            <button
+                              onClick={() => selectCompany(company.id, company.approved)}
+                              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                            >
+                              <FaSignInAlt className="mr-2 inline" /> Entrar
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="flex-1 px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed text-sm font-medium"
+                            >
+                              <FaClock className="mr-2 inline" /> Pendiente
+                            </button>
+                          )}
+                          
+                          {/* Solo mostrar botón de salir si no es el propietario */}
+                          {!company.isOwner && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                leaveCompany(company.id, company.name);
+                              }}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm font-medium"
+                              title="Salir de la empresa"
+                            >
+                              <FaSignOutAlt />
+                            </button>
                           )}
                         </div>
                       </div>

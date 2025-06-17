@@ -21,6 +21,8 @@ model User {
   notifications          Notification[]
   emailConfirmed         Boolean         @default(false)
   emailConfirmationToken String?
+  resetPasswordToken     String?
+  resetPasswordExpires   DateTime?
   assignedTasks          Task[]          @relation("TaskAssignee")
   createdTasks           Task[]          @relation("TaskCreator")
   groupMembers           GroupMember[]

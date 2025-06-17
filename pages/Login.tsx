@@ -266,17 +266,26 @@ export default function Login() {
                       />
                     </div>
                   </>
-                )}
-
-                <button
+                )}                <button
                   type="submit"
                   disabled={loading}
                   className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 focus:outline-none disabled:opacity-50"
                 >
                   {loading ? "Procesando..." : isLogin ? "Iniciar sesión" : "Crear cuenta"}
                 </button>
+                
+                {isLogin && (
+                  <div className="mt-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => router.push('/auth/forgot-password')}
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+                )}
               </form>
-
               <div className="mt-8 text-center">
                 <p className="text-sm text-blue-700">
                   {isLogin ? "¿No tienes una cuenta?" : "¿Ya tienes una cuenta?"}
